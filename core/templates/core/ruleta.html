@@ -1,0 +1,246 @@
+{% extends 'core/base.html' %}
+{% block title %}Ruleta – COSFA{% endblock %}
+{% block extra_css %}
+<style>
+.ruleta-container { display:flex;gap:2rem;align-items:flex-start;flex-wrap:wrap; }
+.canvas-wrap { position:relative;display:flex;flex-direction:column;align-items:center; }
+#rouletteCanvas { border-radius:50%;box-shadow:0 0 60px rgba(200,16,46,0.3);cursor:pointer; }
+.spin-btn {
+  margin-top:1.5rem;
+  background:linear-gradient(135deg,var(--red),#a80e26);
+  color:white;border:none;padding:0.8rem 3rem;
+  border-radius:50px;cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;letter-spacing:2px;
+  box-shadow:0 4px 20px rgba(200,16,46,0.4);
+  transition:all 0.2s;
+}
+.spin-btn:hover { transform:scale(1.05); }
+.spin-btn:disabled { opacity:0.5;cursor:not-allowed;transform:none; }
+.result-panel {
+  flex:1;min-width:280px;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1.5rem;
+}
+.result-display {
+  text-align:center;padding:2rem;
+  background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.2);
+  border-radius:8px;margin-bottom:1rem;min-height:100px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:all 0.3s;
+}
+.result-name { font-family:'Barlow Condensed',sans-serif;font-size:2.2rem;color:var(--warning);line-height:1.1; }
+.result-meta { color:var(--muted);font-size:0.85rem;margin-top:0.25rem; }
+.items-list { max-height:400px;overflow-y:auto; }
+.item-chip {
+  display:inline-block;background:rgba(255,255,255,0.06);
+  border:1px solid var(--border);border-radius:20px;
+  padding:0.25rem 0.75rem;font-size:0.8rem;margin:0.2rem;
+  cursor:pointer;transition:all 0.15s;
+}
+.item-chip:hover,.item-chip.selected { background:rgba(200,16,46,0.2);border-color:var(--red);color:var(--text); }
+.arrow {
+  position:absolute;top:-10px;left:50%;transform:translateX(-50%);
+  width:0;height:0;
+  border-left:12px solid transparent;border-right:12px solid transparent;
+  border-top:30px solid var(--warning);
+  filter:drop-shadow(0 0 8px rgba(255,215,0,0.8));
+  z-index:10;
+}
+</style>
+{% endblock %}
+{% block content %}
+<div class="admin-layout">
+  {% include 'core/partials/sidebar.html' with active='ruleta' %}
+  <div class="admin-content">
+    <div class="page-header">
+      <div class="page-title">🎯 RULETA DE <span>SORTEO</span></div>
+    </div>
+
+    <div style="margin-bottom:1.5rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+      <button onclick="loadEquipos()" class="btn btn-secondary">🛡️ Cargar Equipos</button>
+      <button onclick="loadCustom()" class="btn btn-ghost">✏️ Lista personalizada</button>
+    </div>
+
+    <div class="ruleta-container">
+      <div class="canvas-wrap">
+        <div style="position:relative;">
+          <div class="arrow"></div>
+          <canvas id="rouletteCanvas" width="400" height="400"></canvas>
+        </div>
+        <button id="spinBtn" class="spin-btn" onclick="spinWheel()">🎯 GIRAR</button>
+        <div id="spinCount" style="margin-top:0.75rem;color:var(--muted);font-size:0.82rem;">Giros: 0</div>
+      </div>
+
+      <div class="result-panel">
+        <div class="card-title" style="margin-bottom:1rem;">🏆 RESULTADO</div>
+        <div class="result-display" id="resultDisplay">
+          <div style="font-size:2rem;">🎯</div>
+          <div style="color:var(--muted);font-size:0.9rem;margin-top:0.5rem;">Gira la ruleta para obtener un resultado</div>
+        </div>
+
+        <div class="card-title" style="margin-bottom:0.75rem;font-size:1rem;">📋 ELEMENTOS ({{ equipos|length }} equipos cargados)</div>
+        <div id="itemsList" class="items-list">
+          {% for e in equipos %}
+          <span class="item-chip" data-val="{{ e }}">{{ e }}</span>
+          {% endfor %}
+        </div>
+
+        <div style="margin-top:1rem;">
+          <div class="card-title" style="font-size:0.9rem;margin-bottom:0.5rem;">📜 HISTORIAL</div>
+          <div id="historial" style="max-height:150px;overflow-y:auto;font-size:0.82rem;color:var(--muted);"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const canvas = document.getElementById('rouletteCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height, CX = W/2, CY = H/2, R = W/2 - 10;
+
+let items = [];
+let angle = 0;
+let spinning = false;
+let spinCount = 0;
+const historial = [];
+
+const COLORS = [
+  '#C8102E','#003087','#1a7a3e','#8b4513',
+  '#4a0080','#cc6600','#006080','#800020',
+  '#2d6a4f','#c77dff','#e76f51','#2a9d8f',
+];
+
+// Load initial items from Django template
+const equiposData = [
+  {% for e in equipos %}"{{ e }}",{% endfor %}
+];
+if (equiposData.length > 0) {
+  items = equiposData;
+  drawWheel();
+}
+
+function drawWheel() {
+  ctx.clearRect(0, 0, W, H);
+  if (items.length === 0) {
+    ctx.fillStyle = '#111128';
+    ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#8888aa';
+    ctx.font = '16px Barlow';
+    ctx.textAlign = 'center';
+    ctx.fillText('Carga elementos para comenzar', CX, CY);
+    return;
+  }
+  const slice = (2 * Math.PI) / items.length;
+
+  for (let i = 0; i < items.length; i++) {
+    const start = angle + i * slice;
+    const end = start + slice;
+    ctx.beginPath();
+    ctx.moveTo(CX, CY);
+    ctx.arc(CX, CY, R, start, end);
+    ctx.closePath();
+    ctx.fillStyle = COLORS[i % COLORS.length];
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(CX, CY);
+    ctx.rotate(start + slice / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'white';
+    ctx.font = `bold ${Math.min(14, 300/items.length + 6)}px Barlow Condensed`;
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 4;
+    const label = items[i].length > 15 ? items[i].slice(0, 14) + '…' : items[i];
+    ctx.fillText(label, R - 15, 5);
+    ctx.restore();
+  }
+
+  // Center circle
+  ctx.beginPath(); ctx.arc(CX, CY, 28, 0, Math.PI*2);
+  ctx.fillStyle = '#0a0a14'; ctx.fill();
+  ctx.strokeStyle = '#FFD700'; ctx.lineWidth = 3; ctx.stroke();
+  ctx.fillStyle = '#FFD700';
+  ctx.font = 'bold 20px Bebas Neue';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('⚽', CX, CY);
+}
+
+function spinWheel() {
+  if (spinning || items.length < 2) return;
+  spinning = true;
+  document.getElementById('spinBtn').disabled = true;
+  document.getElementById('resultDisplay').innerHTML = '<div style="font-size:2rem;animation:pulse 0.5s infinite">🌀</div>';
+
+  const extra = 2000 + Math.random() * 3000;
+  const duration = 4000 + Math.random() * 2000;
+  const start = performance.now();
+  const startAngle = angle;
+
+  function animate(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 4);
+    angle = startAngle + extra * ease;
+    drawWheel();
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      spinning = false;
+      document.getElementById('spinBtn').disabled = false;
+      spinCount++;
+      document.getElementById('spinCount').textContent = `Giros: ${spinCount}`;
+      showResult();
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+function showResult() {
+  const slice = (2 * Math.PI) / items.length;
+  const norm = (((-angle % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI));
+  const idx = Math.floor(norm / slice) % items.length;
+  const winner = items[idx];
+
+  document.getElementById('resultDisplay').innerHTML = `
+    <div style="font-size:2rem;margin-bottom:0.5rem;">🏆</div>
+    <div class="result-name">${winner}</div>
+    <div class="result-meta">¡Ganador del sorteo!</div>
+  `;
+
+  // highlight chip
+  document.querySelectorAll('.item-chip').forEach(c => {
+    c.classList.toggle('selected', c.dataset.val === winner);
+  });
+
+  historial.unshift(`<span style="color:var(--warning);">#${spinCount}</span> → ${winner}`);
+  document.getElementById('historial').innerHTML = historial.slice(0, 20).join('<br>');
+}
+
+function loadEquipos() {
+  items = equiposData.length > 0 ? equiposData : ['Equipo A','Equipo B','Equipo C','Equipo D'];
+  angle = 0;
+  drawWheel();
+  updateChips();
+}
+
+function loadCustom() {
+  const txt = prompt('Ingresa los elementos separados por coma:\n(ej: Argentina, Brasil, Francia)');
+  if (!txt) return;
+  items = txt.split(',').map(s => s.trim()).filter(Boolean);
+  angle = 0;
+  drawWheel();
+  updateChips();
+}
+
+function updateChips() {
+  const list = document.getElementById('itemsList');
+  list.innerHTML = items.map(i => `<span class="item-chip" data-val="${i}">${i}</span>`).join('');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends 'core/base.html' %}
+{% block title %}Reglas – COSFA{% endblock %}
+{% block extra_css %}
+<style>
+.regla-tab{padding:.42rem 1rem;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:.82rem;font-weight:600;transition:var(--t);}
+.regla-tab.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+</style>
+{% endblock %}
+{% block content %}
+<div style="max-width:900px;margin:0 auto;padding:1.75rem;">
+
+  <div class="page-header fade-up">
+    <div>
+      <div class="page-title">Reglas de <span>los Deportes</span></div>
+      <div class="page-subtitle">Reglamentos oficiales del torneo COSFA Supercampeones</div>
+    </div>
+  </div>
+
+  {% if reglas %}
+  <!-- Tabs -->
+  <div style="display:flex;gap:.4rem;margin-bottom:1.5rem;flex-wrap:wrap;" class="fade-up">
+    {% for r in reglas %}
+    <button class="regla-tab {% if forloop.first %}active{% endif %}" onclick="showRegla('r-{{ r.deporte }}',this)">
+      {% if r.deporte == 'futbol' %}<i class="bi bi-dribbble"></i>{% elif r.deporte == 'baloncesto' %}<i class="bi bi-bullseye"></i>{% else %}<i class="bi bi-circle"></i>{% endif %}
+      {{ r.get_deporte_display }}
+    </button>
+    {% endfor %}
+  </div>
+
+  <!-- Cards de reglas -->
+  {% for r in reglas %}
+  <div id="r-{{ r.deporte }}" class="regla-card {% if not forloop.first %}hidden{% endif %} fade-up-1">
+    <div class="regla-card-header">
+      <div style="display:flex;align-items:center;gap:.65rem;">
+        <div style="width:38px;height:38px;border-radius:9px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">
+          {% if r.deporte == 'futbol' %}<i class="bi bi-dribbble"></i>{% elif r.deporte == 'baloncesto' %}<i class="bi bi-bullseye"></i>{% else %}<i class="bi bi-circle-fill"></i>{% endif %}
+        </div>
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:700;letter-spacing:.5px;">Reglamento — {{ r.get_deporte_display }}</div>
+          <div style="font-size:.7rem;color:rgba(255,255,255,.65);">Torneo COSFA Supercampeones</div>
+        </div>
+      </div>
+      {% if r.documento %}
+      <a href="{{ r.documento.url }}" target="_blank" style="display:inline-flex;align-items:center;gap:.35rem;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:.38rem .9rem;border-radius:var(--r1);font-size:.76rem;font-weight:600;text-decoration:none;transition:var(--t);" onmouseover="this.style.background='rgba(255,255,255,.25)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">
+        <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+      </a>
+      {% endif %}
+    </div>
+    {% if r.descripcion %}
+    <div class="regla-card-body">{{ r.descripcion }}</div>
+    {% endif %}
+    <div class="regla-card-footer">
+      <i class="bi bi-clock"></i> Última actualización: {{ r.actualizado|date:"d/m/Y" }}
+    </div>
+  </div>
+  {% endfor %}
+
+  {% else %}
+  <div class="cosfa-card fade-up" style="text-align:center;padding:4rem;">
+    <i class="bi bi-journal-text" style="font-size:3rem;color:var(--border);display:block;margin-bottom:1rem;"></i>
+    <div style="font-weight:600;color:var(--muted);">Aún no hay reglas publicadas.</div>
+    <p style="font-size:.85rem;color:var(--muted);margin-top:.5rem;">El administrador publicará los reglamentos próximamente.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function showRegla(id,btn){
+  document.querySelectorAll('[id^="r-"]').forEach(p=>p.classList.add('hidden'));
+  document.querySelectorAll('.regla-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.remove('hidden');
+  btn.classList.add('active');
+}
+</script>
+{% endblock %}

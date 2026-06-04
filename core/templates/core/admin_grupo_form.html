@@ -1,0 +1,32 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ titulo|default:"Crear Grupo" }} – Admin{% endblock %}
+{% block content %}
+<div class="admin-wrap">
+  {% include 'core/partials/sidebar.html' with active='grupos' %}
+  <div class="admin-content">
+    <div class="page-header fade-up">
+      <div class="page-title">{{ titulo|default:"Crear Grupo" }}</div>
+      <a href="{% url 'admin_grupos' %}" class="btn-cosfa btn-cosfa-secondary">
+        <i class="bi bi-arrow-left"></i> Volver
+      </a>
+    </div>
+    <div class="cosfa-card fade-up" style="max-width:500px;">
+      <div class="cosfa-card-title"><i class="bi bi-collection-fill"></i> Datos del Grupo</div>
+      <form method="POST">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="mb-3">
+          <label class="form-label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<div style="color:#dc2626;font-size:.72rem;margin-top:.2rem;">{{ field.errors|join:", " }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        <div style="display:flex;gap:.5rem;margin-top:.5rem;">
+          <button type="submit" class="btn-cosfa btn-cosfa-primary"><i class="bi bi-check-lg"></i> Guardar</button>
+          <a href="{% url 'admin_grupos' %}" class="btn-cosfa btn-cosfa-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

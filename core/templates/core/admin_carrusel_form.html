@@ -1,0 +1,29 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ titulo }} – Admin{% endblock %}
+{% block content %}
+<div class="admin-wrap">
+  {% include 'core/partials/sidebar.html' with active='carrusel' %}
+  <div class="admin-content">
+    <div class="page-header fade-up">
+      <div class="page-title">{{ titulo }}</div>
+      <a href="{% url 'admin_carrusel' %}" class="btn-cosfa btn-cosfa-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+    </div>
+    <div class="cosfa-card fade-up" style="max-width:500px;">
+      <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3"><label class="form-label">Imagen</label>{{ form.imagen }}</div>
+        <div class="mb-3"><label class="form-label">Título (opcional)</label>{{ form.titulo }}</div>
+        <div class="mb-3"><label class="form-label">Subtítulo (opcional)</label>{{ form.subtitulo }}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+          <div class="mb-3"><label class="form-label">Orden</label>{{ form.orden }}</div>
+          <div class="mb-3" style="display:flex;align-items:flex-end;padding-bottom:.2rem;"><label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.88rem;">{{ form.activo }} Imagen activa</label></div>
+        </div>
+        <div style="display:flex;gap:.5rem;">
+          <button type="submit" class="btn-cosfa btn-cosfa-primary"><i class="bi bi-check-lg"></i> Guardar</button>
+          <a href="{% url 'admin_carrusel' %}" class="btn-cosfa btn-cosfa-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

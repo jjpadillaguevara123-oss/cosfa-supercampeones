@@ -1,0 +1,49 @@
+{% extends 'core/base.html' %}
+{% block title %}Configuración – Admin{% endblock %}
+{% block content %}
+<div class="admin-wrap">
+  {% include 'core/partials/sidebar.html' with active='config' %}
+  <div class="admin-content">
+    <div class="page-header fade-up"><div class="page-title">Configuración <span>del Sistema</span></div></div>
+    <div class="cosfa-card fade-up" style="max-width:680px;">
+      <form method="POST">
+        {% csrf_token %}
+        <div class="cosfa-card-title">Apariencia del Portal</div>
+        <div class="mb-3"><label class="form-label">Título del Banner</label>{{ form.banner_titulo }}</div>
+        <div class="mb-3"><label class="form-label">Subtítulo</label>{{ form.banner_subtitulo }}</div>
+        <div class="mb-3"><label class="form-label">Mensaje de Bienvenida</label>{{ form.mensaje_bienvenida }}</div>
+        <hr style="border-color:var(--border);margin:1.1rem 0;">
+        <div class="cosfa-card-title">Visibilidad</div>
+        <div style="display:flex;flex-direction:column;gap:.75rem;margin-bottom:1.25rem;">
+          <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;font-size:.88rem;">{{ form.mostrar_estadisticas }} Mostrar Estadísticas</label>
+          <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;font-size:.88rem;">{{ form.mostrar_tabla }} Mostrar Tabla de Posiciones</label>
+        </div>
+        <hr style="border-color:var(--border);margin:1.1rem 0;">
+        <div class="cosfa-card-title"><i class="bi bi-robot" style="color:var(--primary);"></i> CosfaBot — Gemini IA</div>
+        <div class="mb-3">
+          <label class="form-label">Gemini API Key</label>
+          {{ form.gemini_api_key }}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label"><i class="bi bi-moon-stars-fill"></i> Modo Oscuro por Defecto</label>
+            <div class="form-check">
+              {{ form.modo_oscuro }}
+              <label class="form-check-label">Activar modo oscuro para todos los usuarios al cargar</label>
+            </div>
+          </div>
+
+          <div class="mb-3" style="display:none"><!-- paises_sorteo managed by admin_paises -->
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.35rem;line-height:1.6;">
+            1. Ve a <a href="https://aistudio.google.com" target="_blank" style="color:var(--primary);">aistudio.google.com</a><br>
+            2. Inicia sesión con Google → <strong>Get API Key</strong> → <strong>Create API Key</strong><br>
+            3. Copia la clave (empieza con <code style="background:var(--border);padding:1px 4px;border-radius:3px;font-size:.78rem;">AIza...</code>) y pégala aquí.
+          </div>
+          {% if cfg.gemini_api_key %}<div style="margin-top:.5rem;font-size:.75rem;color:var(--primary-dark);"><i class="bi bi-check-circle-fill"></i> API Key configurada</div>{% endif %}
+        </div>
+        <button type="submit" class="btn-cosfa btn-cosfa-primary"><i class="bi bi-check-lg"></i> Guardar Configuración</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

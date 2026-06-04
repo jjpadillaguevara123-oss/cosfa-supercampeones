@@ -1,0 +1,46 @@
+{% extends 'core/base.html' %}
+{% block title %}Crear Partido – Seleccionar Categoría{% endblock %}
+{% block content %}
+<div class="admin-wrap">
+  {% include 'core/partials/sidebar.html' with active='partidos' %}
+  <div class="admin-content">
+    <div class="page-header fade-up">
+      <div class="page-title">Crear <span>Partido</span></div>
+      <a href="{% url 'admin_partidos' %}" class="btn-cosfa btn-cosfa-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+    </div>
+    <div class="cosfa-card fade-up" style="max-width:560px;">
+      <div class="cosfa-card-title">Selecciona la Categoría del Partido</div>
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:1.25rem;">
+        Primero elige el ciclo, deporte y género para que el sistema filtre los equipos disponibles y adapte el formulario al deporte.
+      </p>
+      <form method="GET" action="{% url 'admin_partido_crear' %}">
+        <div class="mb-3">
+          <label class="form-label">Ciclo</label>
+          <select name="ciclo" class="form-select" required>
+            <option value="">— Selecciona un ciclo —</option>
+            {% for c,n in ciclos %}<option value="{{ c }}">{{ n }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Deporte</label>
+          <select name="deporte" class="form-select" required>
+            <option value="">— Selecciona un deporte —</option>
+            {% for c,n in deportes %}<option value="{{ c }}">{{ n }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Género</label>
+          <select name="genero" class="form-select" required>
+            <option value="">— Selecciona género —</option>
+            {% for c,n in generos %}<option value="{{ c }}">{{ n }}</option>{% endfor %}
+          </select>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.3rem;">
+            ⚽ Fútbol → Masculino o Femenino &nbsp;|&nbsp; 🏀🏐 Baloncesto/Voleibol → Mixto
+          </div>
+        </div>
+        <button type="submit" class="btn-cosfa btn-cosfa-primary"><i class="bi bi-arrow-right"></i> Continuar</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ ciclo_nombre }} – {{ deporte_nombre }} – COSFA{% endblock %}
+{% block content %}
+<div class="main">
+  <a href="{% url 'home' %}" class="btn btn-ghost" style="margin-bottom:1.25rem;">← Inicio</a>
+  <div class="hero-strip fade-in" style="margin-bottom:1.5rem;">
+    <div class="hero-title">
+      {% if deporte == 'futbol' %}⚽{% elif deporte == 'baloncesto' %}🏀{% else %}🏐{% endif %}
+      {{ ciclo_nombre }} · {{ deporte_nombre }} {{ genero_nombre }}
+    </div>
+  </div>
+
+  {% if regla %}
+  <div class="card fade-in-d1" style="margin-bottom:1.5rem;">
+    <div class="card-title">📋 REGLAMENTO</div>
+    <div style="font-size:.88rem;color:var(--muted);line-height:1.8;max-height:200px;overflow:hidden;mask-image:linear-gradient(to bottom,black 60%,transparent);">{{ regla.descripcion }}</div>
+    <a href="{% url 'reglas' %}" class="btn btn-ghost btn-sm" style="margin-top:.75rem;">Ver reglamento completo →</a>
+  </div>
+  {% endif %}
+
+  <!-- Tablas de posiciones -->
+  {% if tablas %}
+  <div class="grid-2 fade-in-d1">
+    {% for td in tablas %}
+    <div class="card">
+      <div class="card-title">{{ td.grupo }}</div>
+      <table>
+        <thead><tr><th>#</th><th>Equipo</th><th>País</th><th>PJ</th><th>PG</th><th>PP</th><th style="color:var(--warning);">PTS</th></tr></thead>
+        <tbody>
+        {% for pos in td.posiciones %}
+        <tr>
+          <td style="font-family:'Barlow Condensed';font-size:1.1rem;{% if forloop.counter == 1 %}color:var(--warning);{% endif %}">{{ forloop.counter }}</td>
+          <td><strong>{{ pos.equipo.nombre_corto }}</strong></td>
+          <td style="font-size:.78rem;color:var(--muted);">{{ pos.equipo.pais|default:"–" }}</td>
+          <td>{{ pos.pj }}</td><td style="color:var(--primary);">{{ pos.pg }}</td><td style="color:#ff6b6b;">{{ pos.pp }}</td>
+          <td><strong style="font-family:'Barlow Condensed';font-size:1.2rem;color:var(--warning);">{{ pos.pts }}</strong></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Equipos -->
+  <div class="card fade-in-d2" style="margin-top:1.5rem;">
+    <div class="card-title">🛡️ EQUIPOS</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;">
+      {% for eq in equipos %}
+      <a href="{% url 'vista_grado' eq.grado_academico.pk %}" style="text-decoration:none;">
+        <div class="card" style="text-align:center;padding:1.25rem;cursor:pointer;">
+          {% if eq.imagen %}<img src="{{ eq.imagen.url }}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--border);margin-bottom:.75rem;">{% else %}
+          <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--blue));display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto .75rem;">🛡️</div>{% endif %}
+          <div style="font-family:'Barlow Condensed';font-size:1.2rem;">{{ eq.grado_academico }}</div>
+          <div style="font-size:.82rem;color:var(--muted);margin-bottom:.5rem;">{{ eq.pais|default:"Sin país" }}</div>
+          {% if eq.capitan %}<div style="font-size:.75rem;color:var(--warning);">⭐ {{ eq.capitan.nombre_completo }}</div>{% endif %}
+          <div style="margin-top:.5rem;font-size:.75rem;color:var(--muted);">{{ eq.inscripciones.count }} jugadores</div>
+        </div>
+      </a>
+      {% empty %}
+      <p style="color:var(--muted);font-size:.88rem;">Sin equipos registrados para esta categoría.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="grid-2 fade-in-d3" style="margin-top:1.5rem;">
+    <div class="card">
+      <div class="card-title">⚽ TOP GOLEADORES</div>
+      {% for g in top_goles %}
+      <a href="{% url 'perfil_jugador' g.jugador__id %}" class="player-card" style="margin-bottom:.4rem;">
+        <div style="font-family:'Barlow Condensed';font-size:1.3rem;color:var(--muted);width:22px;text-align:center;">{{ forloop.counter }}</div>
+        <div class="player-avatar">{{ g.jugador__nombre|first }}{{ g.jugador__apellido|first }}</div>
+        <div class="player-info"><div class="name">{{ g.jugador__nombre }} {{ g.jugador__apellido }}</div></div>
+        <div style="font-family:'Barlow Condensed';font-size:1.8rem;color:var(--warning);margin-left:auto;">{{ g.total }}</div>
+      </a>
+      {% empty %}<p style="color:var(--muted);font-size:.85rem;">Sin datos.</p>{% endfor %}
+    </div>
+    <div class="card">
+      <div class="card-title">🎯 TOP ASISTENTES</div>
+      {% for a in top_asist %}
+      <a href="{% url 'perfil_jugador' a.asistente__id %}" class="player-card" style="margin-bottom:.4rem;">
+        <div style="font-family:'Barlow Condensed';font-size:1.3rem;color:var(--muted);width:22px;text-align:center;">{{ forloop.counter }}</div>
+        <div class="player-avatar">{{ a.asistente__nombre|first }}{{ a.asistente__apellido|first }}</div>
+        <div class="player-info"><div class="name">{{ a.asistente__nombre }} {{ a.asistente__apellido }}</div></div>
+        <div style="font-family:'Barlow Condensed';font-size:1.8rem;color:#5599ff;margin-left:auto;">{{ a.total }}</div>
+      </a>
+      {% empty %}<p style="color:var(--muted);font-size:.85rem;">Sin datos.</p>{% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,81 @@
+<aside class="sidebar" id="mainSidebar">
+  <div class="sb-mini-brand">
+    <div class="sb-logo">{% load static %}<img src="{% static 'core/img/cosfa_logo.png' %}" alt="COSFA" style="width:24px;height:24px;object-fit:contain;vertical-align:middle;margin-right:.35rem;"> COSFA Admin</div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-label">Principal</div>
+    <a href="{% url 'admin_dashboard' %}" class="sb-link {% if active == 'dashboard' %}active{% endif %}">
+      <span class="sb-icon"><i class="bi bi-grid-fill"></i></span> Dashboard
+    </a>
+    <a href="{% url 'home' %}?user_view=1" class="sb-link" target="_blank">
+      <span class="sb-icon"><i class="bi bi-eye-fill"></i></span> Vista Pública
+    </a>
+  </div>
+
+  <div class="sb-divider"></div>
+
+  <div class="sb-section">
+    <div class="sb-label">Académico</div>
+    <a href="{% url 'admin_grados' %}" class="sb-link {% if active == 'grados' %}active{% endif %}">
+      <span class="sb-icon"><i class="bi bi-mortarboard-fill"></i></span> Grados
+    </a>
+    <a href="{% url 'admin_jugadores' %}" class="sb-link {% if active == 'jugadores' %}active{% endif %}">
+      <span class="sb-icon"><i class="bi bi-people-fill"></i></span> Jugadores
+    </a>
+  </div>
+
+  <div class="sb-divider"></div>
+
+  <div class="sb-section">
+    <div class="sb-label">Torneo</div>
+    <a href="{% url 'admin_partidos' %}" class="sb-link {% if active == 'partidos' %}active{% endif %}">
+      <span class="sb-icon"><i class="bi bi-calendar3-fill"></i></span> Partidos
+    </a>
+    <a href="{% url 'admin_horario_semanal' %}" class="sb-link {% if active == 'horario' %}active{% endif %}">
+      <span class="sb-icon"><i class="bi bi-calendar-week-fill"></i></span> Horario Semanal
+    </a>
+    <a href="{% url 'admin_sorteo_grupos' %}" class="sb-link {% if active == 'sorteo' %}active{% endif %}">
+      <span class="sb-icon"><i class="bi bi-shuffle"></i></span> Sorteo & Grupos
+    </a>
+    <a href="{% url 'sorteo_paises' %}" class="sb-link {% if active == 'paises' %}active{% endif %}">
+      <span class="sb-icon"><i class="bi bi-globe2"></i></span> Países
+    </a>
+    <a href="{% url 'tabla_posiciones' %}" class="sb-link {% if active == 'tabla' %}active{% endif %}">
+      <span class="sb-icon"><i class="bi bi-list-ol"></i></span> Tabla
+    </a>
+    <a href="{% url 'estadisticas' %}" class="sb-link {% if active == 'estadisticas' %}active{% endif %}">
+      <span class="sb-icon"><i class="bi bi-bar-chart-fill"></i></span> Estadísticas
+    </a>
+  </div>
+
+  <div class="sb-divider"></div>
+
+  <div class="sb-section">
+    <div class="sb-label">Cierre</div>
+    <a href="{% url 'admin_finalizar_registro' %}" class="sb-link {% if active == 'fin_reg' %}active{% endif %}">
+      <span class="sb-icon"><i class="bi bi-person-check-fill"></i></span> Fin. Registro
+    </a>
+    <a href="{% url 'admin_cerrar_torneo' %}" class="sb-link {% if active == 'cerrar' %}active{% endif %}">
+      <span class="sb-icon"><i class="bi bi-archive-fill"></i></span> Cerrar Torneo
+    </a>
+  </div>
+
+  <div class="sb-divider"></div>
+
+  <div class="sb-section">
+    <div class="sb-label">Contenido</div>
+    <a href="{% url 'admin_reglas' %}" class="sb-link {% if active == 'reglas' %}active{% endif %}">
+      <span class="sb-icon"><i class="bi bi-journal-text"></i></span> Reglas
+    </a>
+    <a href="{% url 'admin_carrusel' %}" class="sb-link {% if active == 'carrusel' %}active{% endif %}">
+      <span class="sb-icon"><i class="bi bi-images"></i></span> Carrusel
+    </a>
+    <a href="{% url 'chatbot' %}" class="sb-link {% if active == 'chatbot' %}active{% endif %}">
+      <span class="sb-icon"><i class="bi bi-robot"></i></span> CosfaBot
+    </a>
+    <a href="{% url 'admin_configuracion' %}" class="sb-link {% if active == 'config' %}active{% endif %}">
+      <span class="sb-icon"><i class="bi bi-gear-fill"></i></span> Configuración
+    </a>
+  </div>
+</aside>

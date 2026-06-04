@@ -1,0 +1,169 @@
+{% extends 'core/base.html' %}
+{% block title %}CosfaBot – COSFA{% endblock %}
+{% block extra_css %}
+<style>
+.chat-layout{display:grid;grid-template-columns:1fr 320px;gap:1.25rem;max-width:1100px;margin:0 auto;padding:1.75rem;}
+.chat-panel{display:flex;flex-direction:column;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;min-height:500px;box-shadow:0 2px 12px rgba(0,0,0,.06);}
+.chat-header{padding:.9rem 1.25rem;background:linear-gradient(135deg,var(--primary),var(--primary));display:flex;align-items:center;gap:.75rem;}
+.bot-av{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;border:2px solid rgba(255,255,255,.3);}
+.chat-msgs{flex:1;overflow-y:auto;padding:1.1rem;display:flex;flex-direction:column;gap:.75rem;max-height:420px;}
+.bubble-wrap{display:flex;align-items:flex-end;gap:.5rem;}
+.bubble-wrap.bot{flex-direction:row;}
+.bav{width:28px;height:28px;border-radius:50%;background:var(--border);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0;}
+.bubble{max-width:85%;padding:.65rem .95rem;border-radius:14px;font-size:.86rem;line-height:1.65;}
+.bubble.bot{background:var(--bg);border:1px solid var(--border);border-bottom-left-radius:4px;color:var(--text);}
+.bubble.bot strong{color:var(--primary);}
+/* Preguntas como botones */
+.pregunta-btn{display:block;width:100%;text-align:left;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.55rem .9rem;font-size:.8rem;color:var(--text-2);cursor:pointer;transition:all .15s;margin-bottom:.4rem;}
+.pregunta-btn:hover{background:var(--primary-bg);border-color:#bfdbfe;color:var(--primary);}
+.pregunta-btn .icon{margin-right:.4rem;}
+/* Filtros */
+.filter-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem;}
+.filter-row select{font-size:.78rem;padding:.3rem .6rem;border:1px solid var(--border);border-radius:6px;color:var(--text-2);background:#fff;}
+</style>
+{% endblock %}
+{% block content %}
+<div class="chat-layout">
+  <div class="chat-panel">
+    <div class="chat-header">
+      <div class="bot-av">🤖</div>
+      <div>
+        <div style="font-weight:700;color:#fff;font-size:.95rem;">CosfaBot</div>
+        <div style="font-size:.7rem;color:rgba(255,255,255,.75);display:flex;align-items:center;gap:.3rem;">
+          <span style="width:6px;height:6px;border-radius:50%;background:#90caf9;display:inline-block;"></span>
+          Asistente del torneo COSFA
+        </div>
+      </div>
+    </div>
+    <div class="chat-msgs" id="chatMsgs">
+      <div class="bubble-wrap bot" id="welcomeMsg">
+        <div class="bav">🤖</div>
+        <div class="bubble bot">
+          ¡Hola! Soy <strong>CosfaBot</strong>, tu asistente del torneo. Selecciona una categoría y haz tu pregunta con los botones de la derecha. 🏆
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel de preguntas y filtros -->
+  <div style="display:flex;flex-direction:column;gap:1rem;">
+    <div class="cosfa-card">
+      <div class="cosfa-card-title">⚙️ Categoría</div>
+      <div class="filter-row">
+        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:.2rem;">Ciclo</label>
+          <select id="fCiclo">
+            {% for c,n in ciclos %}<option value="{{ c }}">{{ n }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:.2rem;">Deporte</label>
+          <select id="fDeporte">
+            <option value="futbol">⚽ Fútbol</option>
+            <option value="baloncesto">🏀 Baloncesto</option>
+            <option value="voleibol">🏐 Voleibol</option>
+          </select>
+        </div>
+        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:.2rem;">Género</label>
+          <select id="fGenero">
+            <option value="M">Masculino</option>
+            <option value="F">Femenino</option>
+            <option value="X">Mixto</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="cosfa-card">
+      <div class="cosfa-card-title">❓ Preguntas</div>
+      <button class="pregunta-btn" onclick="preguntar('campeon')"><span class="icon">🏆</span>¿Quién es el campeón?</button>
+      <button class="pregunta-btn" onclick="preguntar('mas_victorias')"><span class="icon">🥇</span>¿Qué equipo ganó más partidos?</button>
+      <button class="pregunta-btn" onclick="preguntar('mas_anotador')"><span class="icon">⚽</span>¿Equipo/jugador más anotador?</button>
+      <button class="pregunta-btn" onclick="preguntar('menos_anotado')"><span class="icon">🛡️</span>¿Equipo menos anotado?</button>
+      <button class="pregunta-btn" onclick="preguntar('max_asistidor')"><span class="icon">🎯</span>¿Máximo asistidor? (Fútbol)</button>
+      <button class="pregunta-btn" onclick="preguntar('tabla')"><span class="icon">📊</span>Ver tabla de posiciones</button>
+      <button class="pregunta-btn" onclick="preguntar('proximos')"><span class="icon">📅</span>Próximos partidos pendientes</button>
+      <button class="pregunta-btn" onclick="preguntar('resumen_torneo')"><span class="icon">📋</span>Resumen del torneo</button>
+    </div>
+
+    <div class="cosfa-card" style="font-size:.76rem;color:var(--muted);line-height:1.6;">
+      <div style="font-weight:700;color:var(--text-2);font-size:.8rem;margin-bottom:.3rem;">ℹ️ ¿Cómo funciona?</div>
+      Selecciona ciclo, deporte y género, luego presiona una pregunta. El bot consulta los datos reales del torneo en tiempo real.
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const CSRF = "{{ csrf_token }}";
+
+const preguntas = {
+  'campeon': '🏆 ¿Quién es el campeón?',
+  'mas_victorias': '🥇 ¿Qué equipo ganó más partidos?',
+  'mas_anotador': '⚽ ¿Equipo/jugador más anotador?',
+  'menos_anotado': '🛡️ ¿Equipo menos anotado?',
+  'max_asistidor': '🎯 ¿Máximo asistidor?',
+  'tabla': '📊 Ver tabla de posiciones',
+  'proximos': '📅 Próximos partidos pendientes',
+  'resumen_torneo': '📋 Resumen del torneo',
+};
+
+// Filtros y genero coherente
+document.getElementById('fDeporte').addEventListener('change', function() {
+  const gen = document.getElementById('fGenero');
+  if (this.value === 'futbol') {
+    gen.innerHTML = '<option value="M">Masculino</option><option value="F">Femenino</option>';
+  } else {
+    gen.innerHTML = '<option value="X">Mixto</option>';
+  }
+});
+
+async function preguntar(pid) {
+  const ciclo   = document.getElementById('fCiclo').value;
+  const deporte = document.getElementById('fDeporte').value;
+  const genero  = document.getElementById('fGenero').value;
+  const container = document.getElementById('chatMsgs');
+  
+  // Mostrar pregunta del usuario
+  const userBubble = document.createElement('div');
+  userBubble.style.cssText = 'display:flex;justify-content:flex-end;';
+  userBubble.innerHTML = `<div style="background:var(--primary);color:#fff;padding:.6rem .95rem;border-radius:14px;border-bottom-right-radius:4px;font-size:.86rem;max-width:85%;">${preguntas[pid] || pid}</div>`;
+  container.appendChild(userBubble);
+  container.scrollTo({top:container.scrollHeight, behavior:'smooth'});
+
+  // Typing
+  const typing = document.createElement('div');
+  typing.className = 'bubble-wrap bot'; typing.id = 'typing';
+  typing.innerHTML = `<div class="bav">🤖</div><div class="bubble bot" style="color:var(--muted);font-style:italic;">Consultando datos...</div>`;
+  container.appendChild(typing);
+  container.scrollTo({top:container.scrollHeight, behavior:'smooth'});
+
+  try {
+    const res = await fetch("{% url 'chatbot_api' %}", {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+      body: JSON.stringify({pregunta_id:pid, ciclo, deporte, genero})
+    });
+    const data = await res.json();
+    document.getElementById('typing')?.remove();
+    
+    const botBubble = document.createElement('div');
+    botBubble.className = 'bubble-wrap bot';
+    botBubble.innerHTML = `<div class="bav">🤖</div><div class="bubble bot">${fmt(data.reply || '❌ Sin respuesta.')}</div>`;
+    container.appendChild(botBubble);
+    container.scrollTo({top:container.scrollHeight, behavior:'smooth'});
+  } catch(e) {
+    document.getElementById('typing')?.remove();
+    const errBubble = document.createElement('div');
+    errBubble.className = 'bubble-wrap bot';
+    errBubble.innerHTML = `<div class="bav">🤖</div><div class="bubble bot" style="color:#e02424;">❌ Error de conexión.</div>`;
+    container.appendChild(errBubble);
+  }
+}
+
+function fmt(text) {
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\n/g,'<br>');
+}
+</script>
+{% endblock %}

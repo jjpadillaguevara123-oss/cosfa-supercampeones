@@ -1,0 +1,159 @@
+{% extends 'core/base.html' %}
+{% block title %}Jugadores – COSFA Admin{% endblock %}
+{% block extra_css %}
+<style>
+#tabla-jugadores tbody tr { transition: background .12s; }
+.highlight { background: rgba(234,179,8,.2); border-radius: 3px; padding: 0 2px; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="admin-wrap">
+  {% include 'core/partials/sidebar.html' with active='jugadores' %}
+  <div class="admin-content">
+
+    <div class="page-header fade-up">
+      <div>
+        <div class="page-title"><span>Jugadores</span></div>
+        <div class="page-subtitle">Buscar, editar e inscribir jugadores</div>
+      </div>
+    </div>
+
+    <!-- Búsqueda -->
+    <div class="cosfa-card fade-up" style="margin-bottom:1rem;">
+      <div class="cosfa-card-title"><i class="bi bi-search"></i> Búsqueda Rápida</div>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-end;">
+        <div style="flex:2;min-width:200px;">
+          <label class="form-label">T.I., nombre o apellido</label>
+          <input id="busq-live" type="text" class="form-control" placeholder="Ej: 1023456789 · Juan Pérez…"
+                 value="{{ q|default:'' }}" oninput="buscarDinamico()" autocomplete="off">
+        </div>
+        <div style="min-width:140px;">
+          <label class="form-label">Ciclo</label>
+          <select id="fil-ciclo" class="form-select" onchange="aplicarFiltros()">
+            <option value="">Todos</option>
+            {% for c,n in ciclos %}<option value="{{ c }}" {% if ciclo_sel == c %}selected{% endif %}>{{ n }}</option>{% endfor %}
+          </select>
+        </div>
+        <div style="min-width:140px;">
+          <label class="form-label">Grado</label>
+          <select id="fil-grado" class="form-select" onchange="aplicarFiltros()">
+            <option value="">Todos</option>
+            {% for g in grados %}<option value="{{ g.pk }}" {% if grado_sel == g.pk|stringformat:"s" %}selected{% endif %}>{{ g }}</option>{% endfor %}
+          </select>
+        </div>
+        <div style="min-width:120px;">
+          <label class="form-label">Género</label>
+          <select id="fil-genero" class="form-select" onchange="aplicarFiltros()">
+            <option value="">Todos</option>
+            <option value="M" {% if genero_sel == 'M' %}selected{% endif %}>Masculino</option>
+            <option value="F" {% if genero_sel == 'F' %}selected{% endif %}>Femenino</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:.4rem;align-self:flex-end;">
+          <button class="btn-cosfa btn-cosfa-primary btn-cosfa-sm" onclick="aplicarFiltros()">
+            <i class="bi bi-search"></i> Filtrar
+          </button>
+          <a href="{% url 'admin_jugadores' %}" class="btn-cosfa btn-cosfa-secondary btn-cosfa-sm">
+            <i class="bi bi-x-lg"></i> Limpiar
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="cosfa-card fade-up-1">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+        <div style="font-size:.78rem;color:var(--muted);" id="resultado-count">
+          <i class="bi bi-people-fill" style="color:var(--primary);"></i>
+          {{ jugadores.count }} jugador(es) encontrado(s)
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="cosfa-table" id="tabla-jugadores">
+          <thead>
+            <tr>
+              <th>Foto</th><th>T.I.</th><th>Nombre</th><th>Apellido</th>
+              <th>Género</th><th>Grado</th><th>País</th><th>Equipos</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for j in jugadores %}
+          <tr data-nombre="{{ j.nombre|lower }}" data-apellido="{{ j.apellido|lower }}" data-ti="{{ j.ti }}">
+            <td>
+              {% if j.foto %}
+              <img src="{{ j.foto.url }}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #90caf9;">
+              {% else %}
+              <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.78rem;">
+                {{ j.nombre|first }}{{ j.apellido|first }}
+              </div>
+              {% endif %}
+            </td>
+            <td style="font-size:.78rem;color:var(--muted);font-family:monospace;">{{ j.ti }}</td>
+            <td style="font-weight:600;">{{ j.nombre }}</td>
+            <td>{{ j.apellido }}</td>
+            <td>
+              {% if j.genero == 'M' %}<span class="tag tag-blue">Masculino</span>
+              {% else %}<span class="tag tag-purple">Femenino</span>{% endif %}
+            </td>
+            <td style="font-size:.82rem;">{{ j.grado }}</td>
+            <td style="font-size:.78rem;color:var(--muted);">{{ j.grado.pais|default:"—" }}</td>
+            <td>
+              <div style="display:flex;flex-wrap:wrap;gap:.2rem;">
+              {% for ins in j.inscripciones.all %}
+                <span class="tag tag-green" style="font-size:.6rem;">{{ ins.equipo.nombre_corto }}</span>
+              {% empty %}—{% endfor %}
+              </div>
+            </td>
+            <td>
+              <div style="display:flex;gap:.3rem;">
+                <a href="{% url 'perfil_jugador' j.pk %}" class="btn-cosfa btn-cosfa-secondary btn-cosfa-icon-sm" title="Ver perfil"><i class="bi bi-eye-fill"></i></a>
+                <a href="{% url 'admin_jugador_editar' j.pk %}" class="btn-cosfa btn-cosfa-secondary btn-cosfa-icon-sm" title="Editar"><i class="bi bi-pencil-fill"></i></a>
+                <a href="{% url 'admin_jugador_eliminar' j.pk %}" class="btn-cosfa btn-cosfa-danger btn-cosfa-icon-sm" title="Eliminar"><i class="bi bi-trash-fill"></i></a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9" style="text-align:center;padding:3rem;color:var(--muted);">
+              <i class="bi bi-people" style="font-size:2rem;display:block;margin-bottom:.5rem;"></i>
+              No se encontraron jugadores.
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function buscarDinamico() {
+  const q = document.getElementById('busq-live').value.toLowerCase().trim();
+  const rows = document.querySelectorAll('#tabla-jugadores tbody tr');
+  let count = 0;
+  rows.forEach(r => {
+    const n = (r.dataset.nombre||'') + ' ' + (r.dataset.apellido||'') + ' ' + (r.dataset.ti||'');
+    const show = !q || n.includes(q);
+    r.style.display = show ? '' : 'none';
+    if (show) count++;
+  });
+  document.getElementById('resultado-count').innerHTML = `<i class="bi bi-people-fill" style="color:var(--primary);"></i> ${count} jugador(es) encontrado(s)`;
+}
+function aplicarFiltros() {
+  const base = '{% url "admin_jugadores" %}';
+  const q = document.getElementById('busq-live').value;
+  const ciclo = document.getElementById('fil-ciclo').value;
+  const grado = document.getElementById('fil-grado').value;
+  const genero = document.getElementById('fil-genero').value;
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  if (ciclo) params.set('ciclo', ciclo);
+  if (grado) params.set('grado', grado);
+  if (genero) params.set('genero', genero);
+  window.location = base + (params.toString() ? '?' + params.toString() : '');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'core/base.html' %}
+{% block title %}Carrusel – Admin{% endblock %}
+{% block content %}
+<div class="admin-wrap">
+  {% include 'core/partials/sidebar.html' with active='carrusel' %}
+  <div class="admin-content">
+    <div class="page-header fade-up">
+      <div class="page-title">Carrusel de <span>Imágenes</span></div>
+      <a href="{% url 'admin_carrusel_crear' %}" class="btn-cosfa btn-cosfa-primary"><i class="bi bi-plus-lg"></i> Agregar Imagen</a>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;" class="fade-up">
+      {% for img in imgs %}
+      <div class="cosfa-card" style="padding:0;overflow:hidden;">
+        {% if img.imagen %}<img src="{{ img.imagen.url }}" style="width:100%;height:150px;object-fit:cover;">{% endif %}
+        <div style="padding:.9rem 1rem;">
+          <div style="font-weight:600;font-size:.88rem;margin-bottom:.2rem;">{{ img.titulo|default:"Sin título" }}</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:.7rem;">{{ img.subtitulo|default:"" }}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;gap:.35rem;font-size:.72rem;">
+              <span class="tag tag-gray">Orden: {{ img.orden }}</span>
+              {% if img.activo %}<span class="tag tag-green">Activo</span>{% else %}<span class="tag tag-amber">Inactivo</span>{% endif %}
+            </div>
+            <div style="display:flex;gap:.3rem;">
+              <a href="{% url 'admin_carrusel_editar' img.pk %}" class="btn-cosfa btn-cosfa-outline btn-cosfa-sm"><i class="bi bi-pencil"></i></a>
+              <a href="{% url 'admin_carrusel_eliminar' img.pk %}" class="btn-cosfa btn-cosfa-danger btn-cosfa-sm"><i class="bi bi-trash"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="cosfa-card" style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted);">
+        <i class="bi bi-images" style="font-size:2.5rem;color:var(--muted);"></i>
+        <p style="margin-top:.75rem;">Sin imágenes en el carrusel.</p>
+        <a href="{% url 'admin_carrusel_crear' %}" class="btn-cosfa btn-cosfa-primary" style="margin-top:1rem;">Agregar primera imagen</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

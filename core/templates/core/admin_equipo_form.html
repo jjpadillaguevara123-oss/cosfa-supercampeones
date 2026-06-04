@@ -1,0 +1,31 @@
+{% extends 'core/base.html' %}
+{% block title %}Editar Equipo – Admin{% endblock %}
+{% block content %}
+<div class="admin-wrap">
+  {% include 'core/partials/sidebar.html' with active='grados' %}
+  <div class="admin-content">
+    <div class="page-header">
+      <div class="page-title">Editar Equipo</div>
+      {% if equipo %}<a href="{% url 'admin_grado_detalle' equipo.grado.pk %}" class="btn-cosfa btn-cosfa-secondary"><i class="bi bi-arrow-left"></i> Volver</a>{% endif %}
+    </div>
+    <div class="cosfa-card fade-up" style="max-width:520px;">
+      <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3"><label class="form-label">Grado</label>{{ form.grado }}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+          <div class="mb-3"><label class="form-label">Deporte</label>{{ form.deporte }}</div>
+          <div class="mb-3"><label class="form-label">Género</label>{{ form.genero }}</div>
+        </div>
+        <div class="mb-3"><label class="form-label">Capitán</label>{{ form.capitan }}</div>
+        <div class="mb-3"><label class="form-label">Imagen del Equipo</label>{{ form.imagen }}
+          {% if equipo.imagen %}<img src="{{ equipo.imagen.url }}" style="height:55px;margin-top:.5rem;border-radius:6px;">{% endif %}
+        </div>
+        <div style="display:flex;gap:.5rem;">
+          <button type="submit" class="btn-cosfa btn-cosfa-primary"><i class="bi bi-check-lg"></i> Guardar</button>
+          <a href="{% url 'admin_grados' %}" class="btn-cosfa btn-cosfa-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

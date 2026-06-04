@@ -1,0 +1,594 @@
+{% extends 'core/base.html' %}
+{% block title %}Estadísticas – COSFA{% endblock %}
+{% block extra_css %}
+<style>
+/* ── STATS PAGE ── */
+@keyframes barGrow{from{width:0;}to{width:var(--w);}}
+@keyframes numCount{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeSlide{from{opacity:0;transform:translateX(-10px);}to{opacity:1;transform:translateX(0);}}
+
+/* hero counters */
+.stat-hero{
+  background:linear-gradient(135deg,#0a1128 0%,#1a3a7a 60%,#0d1f4a 100%);
+  border-radius:16px;padding:1.5rem;
+  display:flex;align-items:center;gap:1rem;
+  border:1px solid rgba(255,255,255,.08);
+  position:relative;overflow:hidden;
+}
+.stat-hero::before{
+  content:'';position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg width='40' height='46' viewBox='0 0 40 46' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0 L40 11.5 L40 34.5 L20 46 L0 34.5 L0 11.5Z' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1'/%3E%3C/svg%3E");
+  background-size:40px 46px;
+}
+.stat-hero-icon{
+  width:54px;height:54px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.6rem;flex-shrink:0;position:relative;z-index:1;
+}
+.stat-hero-num{
+  font-family:'Barlow Condensed',sans-serif;font-size:2.8rem;
+  color:#fff;line-height:1;position:relative;z-index:1;
+  animation:numCount .5s ease both;
+}
+.stat-hero-lbl{
+  font-size:.68rem;color:rgba(255,255,255,.5);
+  text-transform:uppercase;letter-spacing:1.2px;
+  position:relative;z-index:1;
+}
+
+/* ranking list */
+.rank-row{
+  display:flex;align-items:center;gap:.75rem;
+  padding:.65rem .75rem;
+  border-radius:10px;
+  text-decoration:none;color:inherit;
+  transition:background .15s;
+  position:relative;overflow:hidden;
+  animation:fadeSlide .3s ease both;
+}
+.rank-row:hover{background:var(--bg);}
+.rank-row::after{
+  content:'';position:absolute;left:0;top:0;bottom:0;
+  width:var(--bar);
+  background:var(--bar-color);
+  opacity:.07;
+  border-radius:10px;
+  transition:width .6s cubic-bezier(.34,1.56,.64,1);
+}
+.rank-num-badge{
+  width:28px;height:28px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:.78rem;flex-shrink:0;
+}
+.rank-av{
+  width:38px;height:38px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0;
+}
+.rank-bar-wrap{
+  flex:1;display:flex;flex-direction:column;gap:3px;
+}
+.rank-bar-bg{
+  height:5px;background:#f1f5f9;border-radius:20px;overflow:hidden;
+}
+.rank-bar-fill{
+  height:100%;border-radius:20px;
+  width:0;
+  animation:barGrow .7s cubic-bezier(.34,1.56,.64,1) both;
+}
+.rank-score{
+  font-family:'Barlow Condensed',sans-serif;font-size:2rem;
+  line-height:1;flex-shrink:0;width:48px;text-align:right;
+}
+.rank-score-lbl{font-size:.6rem;color:var(--muted);text-align:right;}
+
+/* tabla colectiva mejorada */
+.cosfa-table-pro{width:100%;border-collapse:collapse;font-size:.83rem;}
+.cosfa-table-pro thead tr{
+  background:linear-gradient(90deg,#0a1128,#1a3a7a);
+  color:rgba(255,255,255,.75);
+}
+.cosfa-table-pro thead th{
+  padding:.65rem .75rem;font-size:.65rem;letter-spacing:1px;
+  text-transform:uppercase;font-weight:600;white-space:nowrap;
+  border:none;
+}
+.cosfa-table-pro thead th:first-child{border-radius:10px 0 0 0;}
+.cosfa-table-pro thead th:last-child{border-radius:0 10px 0 0;}
+.cosfa-table-pro tbody tr{
+  border-bottom:1px solid var(--border);
+  transition:background .15s;
+}
+.cosfa-table-pro tbody tr:hover{background:var(--bg);}
+.cosfa-table-pro tbody tr.top1{background:linear-gradient(90deg,var(--warning-bg),var(--warning-bg),var(--warning-bg));}
+.cosfa-table-pro tbody tr.top2{background:linear-gradient(90deg,var(--bg),#f1f5f9,var(--bg));}
+.cosfa-table-pro tbody tr.top3{background:linear-gradient(90deg,#fff7f0,#fde8cc,#fff7f0);}
+.cosfa-table-pro tbody td{padding:.7rem .75rem;vertical-align:middle;}
+
+/* mini progress bar en tabla */
+.mini-win-bar{
+  display:flex;height:6px;border-radius:20px;overflow:hidden;
+  background:#f1f5f9;width:60px;
+}
+.mini-win-fill{background:linear-gradient(90deg,var(--primary),var(--primary));border-radius:20px;}
+
+/* filtros mejorados */
+.filter-chip{
+  display:inline-flex;align-items:center;gap:.35rem;
+  padding:.4rem 1rem;border-radius:20px;font-size:.8rem;font-weight:600;
+  border:1.5px solid var(--border);background:var(--card);cursor:pointer;
+  transition:all .15s;color:var(--text);text-decoration:none;
+  white-space:nowrap;
+}
+.filter-chip:hover,.filter-chip.active{
+  background:var(--primary);border-color:var(--primary);color:#fff;
+}
+.filter-select-wrap{
+  display:flex;align-items:center;gap:.4rem;
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:20px;padding:.35rem .85rem;font-size:.8rem;
+}
+.filter-select-wrap select{
+  border:none;outline:none;background:transparent;font-size:.8rem;font-weight:600;cursor:pointer;
+}
+
+/* section header */
+.section-head{
+  display:flex;align-items:center;gap:.6rem;
+  margin-bottom:1rem;
+}
+.section-head-icon{
+  width:36px;height:36px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;
+}
+.section-head-title{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;letter-spacing:1px;color:var(--text);}
+.section-head-sub{font-size:.72rem;color:var(--muted);}
+
+/* podio */
+.podio-wrap{display:flex;align-items:flex-end;justify-content:center;gap:1rem;margin-bottom:1.5rem;}
+.podio-item{display:flex;flex-direction:column;align-items:center;gap:.4rem;}
+.podio-bar{
+  width:70px;border-radius:8px 8px 0 0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;color:#fff;
+  position:relative;
+}
+.podio-bar-1{background:linear-gradient(to top,var(--warning),#fbbf24);height:110px;}
+.podio-bar-2{background:linear-gradient(to top,#4b5563,var(--muted));height:80px;}
+.podio-bar-3{background:linear-gradient(to top,var(--warning),var(--warning));height:60px;}
+.podio-name{font-size:.72rem;font-weight:700;text-align:center;max-width:80px;line-height:1.2;}
+.podio-av{
+  width:44px;height:44px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:.95rem;color:#fff;
+  border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.15);
+}
+
+/* empty state */
+.empty-state{
+  text-align:center;padding:3rem;color:var(--muted);
+}
+.empty-state i{font-size:2.5rem;color:var(--border);display:block;margin-bottom:.75rem;}
+
+@media(max-width:700px){
+  .rank-bar-wrap{display:none;}
+  .stats-grid-2{grid-template-columns:1fr !important;}
+  .podio-bar{width:54px;}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% if user.is_staff %}
+<div class="admin-wrap">
+  {% include 'core/partials/sidebar.html' with active='estadisticas' %}
+  <div class="admin-content">
+{% endif %}
+<div style="max-width:1100px;margin:0 auto;padding:1.75rem;">
+
+  <!-- HEADER -->
+  <div class="page-header" style="margin-bottom:1.5rem;">
+    <div class="page-title">Estadísticas <span>del Torneo</span></div>
+  </div>
+
+  <!-- FILTROS -->
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:.9rem 1.1rem;margin-bottom:1.4rem;display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;" class="fade-up">
+    <span style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600;">Deporte</span>
+    {% for c,n in deportes %}
+    <a href="?deporte={{ c }}&ciclo={{ ciclo_sel }}&genero={{ genero_sel }}"
+       class="filter-chip {% if deporte_sel == c %}active{% endif %}">
+      {% if c == 'futbol' %}<i class="bi bi-dribbble"></i>{% elif c == 'baloncesto' %}<i class="bi bi-bullseye"></i>{% else %}<i class="bi bi-circle-fill"></i>{% endif %} {{ n }}
+    </a>
+    {% endfor %}
+
+    <div style="width:1px;height:20px;background:var(--border);margin:0 .2rem;"></div>
+
+    <span style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600;">Ciclo</span>
+    <a href="?deporte={{ deporte_sel }}&ciclo=&genero={{ genero_sel }}"
+       class="filter-chip {% if not ciclo_sel %}active{% endif %}">Todos</a>
+    {% for c,n in ciclos %}
+    <a href="?deporte={{ deporte_sel }}&ciclo={{ c }}&genero={{ genero_sel }}"
+       class="filter-chip {% if ciclo_sel == c %}active{% endif %}">{{ n }}</a>
+    {% endfor %}
+
+    {% if deporte_sel == 'futbol' %}
+    <div class="filter-select-wrap">
+      <i class="bi bi-gender-ambiguous" style="font-size:.8rem;color:var(--muted);"></i>
+      <select onchange="location='?deporte={{ deporte_sel }}&ciclo={{ ciclo_sel }}&genero='+this.value">
+        <option value="">Todos</option>
+        <option value="M" {% if genero_sel == 'M' %}selected{% endif %}>Masculino</option>
+        <option value="F" {% if genero_sel == 'F' %}selected{% endif %}>Femenino</option>
+      </select>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- HERO COUNTERS -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;" class="fade-up-1">
+    <div class="stat-hero">
+      <div class="stat-hero-icon" style="background:rgba(5,122,85,.2);">🏟️</div>
+      <div>
+        <div class="stat-hero-num">{{ total_partidos }}</div>
+        <div class="stat-hero-lbl">Partidos Jugados</div>
+      </div>
+    </div>
+    {% if deporte_sel == 'futbol' %}
+    <div class="stat-hero">
+      <div class="stat-hero-icon" style="background:rgba(13,71,161,.2);"><i class="bi bi-dribbble"></i></div>
+      <div>
+        <div class="stat-hero-num">{{ total_goles }}</div>
+        <div class="stat-hero-lbl">Goles Totales</div>
+      </div>
+    </div>
+    <div class="stat-hero">
+      <div class="stat-hero-icon" style="background:rgba(13,71,161,.2);">🎯</div>
+      <div>
+        <div class="stat-hero-num">{{ top_asist|length }}</div>
+        <div class="stat-hero-lbl">Con Asistencias</div>
+      </div>
+    </div>
+    {% endif %}
+    {% if deporte_sel == 'baloncesto' or deporte_sel == 'voleibol' %}
+    <div class="stat-hero">
+      <div class="stat-hero-icon" style="background:rgba(13,71,161,.2);">🏆</div>
+      <div>
+        <div class="stat-hero-num">{{ stats_col|length }}</div>
+        <div class="stat-hero-lbl">Equipos en Tabla</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ═══════════════════ FÚTBOL ═══════════════════ -->
+  {% if deporte_sel == 'futbol' %}
+
+  {% if top_goles %}
+  <!-- PODIO GOLEADORES -->
+  <div class="cosfa-card fade-up-2" style="margin-bottom:1.25rem;">
+    <div class="section-head">
+      <div class="section-head-icon" style="background:var(--primary-bg);"><i class="bi bi-dribbble"></i></div>
+      <div>
+        <div class="section-head-title">Tabla de Goleadores</div>
+        <div class="section-head-sub">Jugadores con más goles en el torneo</div>
+      </div>
+    </div>
+
+    <!-- Podio top 3 -->
+    {% if top_goles|length >= 3 %}
+    <div class="podio-wrap">
+      {% with top_goles.1 as p2 %}
+      <div class="podio-item">
+        <a href="{% url 'perfil_jugador' p2.jugador__id %}" style="text-decoration:none;color:inherit;display:contents;">
+          <div class="podio-av" style="background:linear-gradient(135deg,#4b5563,var(--muted));">{{ p2.jugador__nombre|first }}{{ p2.jugador__apellido|first }}</div>
+          <div class="podio-bar podio-bar-2">{{ p2.total }}</div>
+          <div class="podio-name" style="color:var(--muted);">🥈 {{ p2.jugador__apellido }}</div>
+        </a>
+      </div>
+      {% endwith %}
+      {% with top_goles.0 as p1 %}
+      <div class="podio-item">
+        <a href="{% url 'perfil_jugador' p1.jugador__id %}" style="text-decoration:none;color:inherit;display:contents;">
+          <div class="podio-av" style="background:linear-gradient(135deg,var(--warning),#fbbf24);width:52px;height:52px;font-size:1.1rem;">{{ p1.jugador__nombre|first }}{{ p1.jugador__apellido|first }}</div>
+          <div class="podio-bar podio-bar-1">{{ p1.total }}</div>
+          <div class="podio-name" style="color:var(--warning);">🥇 {{ p1.jugador__apellido }}</div>
+        </a>
+      </div>
+      {% endwith %}
+      {% with top_goles.2 as p3 %}
+      <div class="podio-item">
+        <a href="{% url 'perfil_jugador' p3.jugador__id %}" style="text-decoration:none;color:inherit;display:contents;">
+          <div class="podio-av" style="background:linear-gradient(135deg,var(--warning),var(--warning));">{{ p3.jugador__nombre|first }}{{ p3.jugador__apellido|first }}</div>
+          <div class="podio-bar podio-bar-3">{{ p3.total }}</div>
+          <div class="podio-name" style="color:var(--warning);">🥉 {{ p3.jugador__apellido }}</div>
+        </a>
+      </div>
+      {% endwith %}
+    </div>
+    {% endif %}
+
+    <!-- Lista completa -->
+    {% with top_goles.0.total as max_val %}
+    {% for g in top_goles %}
+    <a href="{% url 'perfil_jugador' g.jugador__id %}" class="rank-row"
+       style="--bar:{{ g.total|floatformat:0 }}0%;--bar-color:var(--primary);animation-delay:{{ forloop.counter0 }}00ms;">
+      <div class="rank-num-badge"
+        style="background:{% if forloop.counter == 1 %}var(--warning-bg);color:var(--warning);{% elif forloop.counter == 2 %}var(--border);color:var(--muted);{% elif forloop.counter == 3 %}#fde8cc;color:var(--warning);{% else %}var(--bg);color:#d1d5db;{% endif %}">
+        {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}{{ forloop.counter }}{% endif %}
+      </div>
+      <div class="rank-av" style="background:linear-gradient(135deg,var(--primary),#60a5fa);">{{ g.jugador__nombre|first }}{{ g.jugador__apellido|first }}</div>
+      <div class="rank-bar-wrap">
+        <div style="font-size:.84rem;font-weight:700;">{{ g.jugador__nombre }} {{ g.jugador__apellido }}</div>
+        <div style="font-size:.7rem;color:var(--muted);">{{ g.jugador__grado__pais|default:"–" }}</div>
+        <div class="rank-bar-bg">
+          <div class="rank-bar-fill" style="--w:{{ g.total }}00%;background:linear-gradient(90deg,var(--primary),#60a5fa);animation-delay:{{ forloop.counter0 }}50ms;"></div>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div class="rank-score" style="color:var(--primary);">{{ g.total }}</div>
+        <div class="rank-score-lbl">goles</div>
+      </div>
+    </a>
+    {% endfor %}
+    {% endwith %}
+  </div>
+  {% endif %}
+
+  <!-- ASISTENTES -->
+  {% if top_asist %}
+  <div class="cosfa-card fade-up-3">
+    <div class="section-head">
+      <div class="section-head-icon" style="background:var(--primary-bg);">🎯</div>
+      <div>
+        <div class="section-head-title">Tabla de Asistentes</div>
+        <div class="section-head-sub">Jugadores con más asistencias en el torneo</div>
+      </div>
+    </div>
+
+    {% with top_asist.0.total as max_val %}
+    {% for a in top_asist %}
+    <a href="{% url 'perfil_jugador' a.asistente__id %}" class="rank-row"
+       style="--bar:{{ a.total|floatformat:0 }}0%;--bar-color:var(--primary);animation-delay:{{ forloop.counter0 }}00ms;">
+      <div class="rank-num-badge"
+        style="background:{% if forloop.counter == 1 %}var(--primary-bg);color:var(--primary);{% elif forloop.counter == 2 %}var(--border);color:var(--muted);{% elif forloop.counter == 3 %}var(--primary-bg);color:var(--primary-light);{% else %}var(--bg);color:#d1d5db;{% endif %}">
+        {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}{{ forloop.counter }}{% endif %}
+      </div>
+      <div class="rank-av" style="background:linear-gradient(135deg,var(--primary),var(--primary-light));">{{ a.asistente__nombre|first }}{{ a.asistente__apellido|first }}</div>
+      <div class="rank-bar-wrap">
+        <div style="font-size:.84rem;font-weight:700;">{{ a.asistente__nombre }} {{ a.asistente__apellido }}</div>
+        <div style="font-size:.7rem;color:var(--muted);">{{ a.asistente__grado__pais|default:"–" }}</div>
+        <div class="rank-bar-bg">
+          <div class="rank-bar-fill" style="background:linear-gradient(90deg,var(--primary),var(--primary-light));animation-delay:{{ forloop.counter0 }}50ms;"></div>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div class="rank-score" style="color:var(--primary);">{{ a.total }}</div>
+        <div class="rank-score-lbl">asist.</div>
+      </div>
+    </a>
+    {% endfor %}
+    {% endwith %}
+  </div>
+  {% endif %}
+
+  {% if not top_goles and not top_asist %}
+  <div class="cosfa-card">
+    <div class="empty-state"><i class="bi bi-trophy"></i> Sin estadísticas de fútbol aún.</div>
+  </div>
+  {% endif %}
+
+  <!-- ═══════════════════ BALONCESTO ═══════════════════ -->
+  {% elif deporte_sel == 'baloncesto' %}
+  <div class="cosfa-card fade-up-2">
+    <div class="section-head">
+      <div class="section-head-icon" style="background:var(--primary-bg);"><i class="bi bi-bullseye"></i></div>
+      <div>
+        <div class="section-head-title">Clasificación — Baloncesto</div>
+        <div class="section-head-sub">Basada en partidos ganados y diferencia de puntos</div>
+      </div>
+    </div>
+
+    {% if mas_ofensivo or mas_defensivo %}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem;">
+      {% if mas_ofensivo %}
+      <div style="background:var(--primary-bg);border:1px solid #bfdbfe;border-radius:10px;padding:.85rem;text-align:center;">
+        <div style="font-size:.65rem;color:var(--primary);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:.3rem;">⚔️ Más Ofensivo</div>
+        <div style="font-family:'Barlow Condensed';font-size:1.15rem;">{{ mas_ofensivo.equipo.nombre_corto }}</div>
+        <div style="font-family:'Barlow Condensed';font-size:1.8rem;color:var(--primary);">{{ mas_ofensivo.pf }}</div>
+        <div style="font-size:.65rem;color:var(--muted);">puntos a favor</div>
+      </div>
+      {% endif %}
+      {% if mas_defensivo %}
+      <div style="background:var(--primary-bg);border:1px solid #bfdbfe;border-radius:10px;padding:.85rem;text-align:center;">
+        <div style="font-size:.65rem;color:var(--primary-dark);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:.3rem;">🛡️ Menos Anotado En Contra</div>
+        <div style="font-family:'Barlow Condensed';font-size:1.15rem;">{{ mas_defensivo.equipo.nombre_corto }}</div>
+        <div style="font-family:'Barlow Condensed';font-size:1.8rem;color:var(--primary-dark);">{{ mas_defensivo.pc }}</div>
+        <div style="font-size:.65rem;color:var(--muted);">puntos en contra</div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if stats_col %}
+    {% with stats_col.0 as lider %}
+    <!-- destacado líder -->
+    <div style="background:linear-gradient(135deg,var(--warning-bg),var(--warning-bg));border:1px solid rgba(234,179,8,.3);border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1rem;">
+      <div style="font-size:2rem;">🏆</div>
+      <div style="flex:1;">
+        <div style="font-size:.65rem;color:var(--warning);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Líder del Torneo</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;letter-spacing:1px;">{{ lider.equipo.nombre_corto }}</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:2.4rem;color:var(--warning);line-height:1;">{{ lider.pg }}</div>
+        <div style="font-size:.65rem;color:var(--warning);text-transform:uppercase;letter-spacing:.5px;">victorias</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:2.4rem;color:var(--primary);line-height:1;">{{ lider.pf }}</div>
+        <div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">pts favor</div>
+      </div>
+    </div>
+    {% endwith %}
+
+    <div style="overflow-x:auto;">
+      <table class="cosfa-table-pro">
+        <thead>
+          <tr>
+            <th style="width:36px;">#</th>
+            <th>Equipo</th>
+            <th title="Partidos Jugados">PJ</th>
+            <th title="Ganados" style="color:#90caf9;">G</th>
+            <th title="Perdidos" style="color:#fca5a5;">P</th>
+            <th title="Puntos a favor">PF</th>
+            <th title="Puntos en contra">PC</th>
+            <th title="Diferencia">DIF</th>
+            <th title="% victorias">Racha</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for s in stats_col %}
+        <tr class="{% if forloop.counter == 1 %}top1{% elif forloop.counter == 2 %}top2{% elif forloop.counter == 3 %}top3{% endif %}">
+          <td style="font-weight:800;font-size:.9rem;text-align:center;">
+            {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}<span style="color:#d1d5db;">{{ forloop.counter }}</span>{% endif %}
+          </td>
+          <td>
+            <a href="{% url 'vista_grado' s.equipo.grado.pk %}" style="font-weight:700;color:var(--primary);text-decoration:none;font-size:.85rem;display:flex;align-items:center;gap:.4rem;">
+              {{ s.equipo.nombre_corto }}
+            </a>
+          </td>
+          <td style="color:var(--muted);font-weight:600;">{{ s.pj }}</td>
+          <td><span style="background:var(--primary-bg);color:var(--primary-dark);font-weight:700;padding:2px 8px;border-radius:6px;font-size:.8rem;">{{ s.pg }}</span></td>
+          <td><span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:6px;font-size:.8rem;">{{ s.pp }}</span></td>
+          <td style="font-weight:700;">{{ s.pf }}</td>
+          <td style="color:var(--muted);">{{ s.pc }}</td>
+          <td>
+            {% if s.pf > s.pc %}<span style="color:var(--primary-dark);font-weight:700;">+{% with s.pf|add:0 as f %}{% with s.pc|add:0 as c %}{{ s.pf }}{% endwith %}{% endwith %}</span>
+            {% elif s.pf < s.pc %}<span style="color:#e02424;font-weight:700;">-</span>
+            {% else %}<span style="color:var(--muted);">0</span>{% endif %}
+          </td>
+          <td>
+            {% if s.pj > 0 %}
+            <div style="display:flex;align-items:center;gap:.4rem;">
+              <div class="mini-win-bar">
+                <div class="mini-win-fill" style="width:{% widthratio s.pg s.pj 100 %}%;"></div>
+              </div>
+              <span style="font-size:.72rem;color:var(--muted);">{% widthratio s.pg s.pj 100 %}%</span>
+            </div>
+            {% else %}–{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><i class="bi bi-basketball"></i> Sin partidos de baloncesto aún.</div>
+    {% endif %}
+  </div>
+
+  <!-- ═══════════════════ VOLEIBOL ═══════════════════ -->
+  {% elif deporte_sel == 'voleibol' %}
+  <div class="cosfa-card fade-up-2">
+    <div class="section-head">
+      <div class="section-head-icon" style="background:var(--primary-bg);"><i class="bi bi-circle-fill"></i></div>
+      <div>
+        <div class="section-head-title">Clasificación — Voleibol</div>
+        <div class="section-head-sub">Clasificación por partidos ganados y diferencia de sets</div>
+      </div>
+    </div>
+
+    {% if mas_ofensivo or mas_defensivo %}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem;">
+      {% if mas_ofensivo %}
+      <div style="background:var(--primary-bg);border:1px solid #bfdbfe;border-radius:10px;padding:.85rem;text-align:center;">
+        <div style="font-size:.65rem;color:var(--primary);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:.3rem;">⚔️ Más Ofensivo (Sets)</div>
+        <div style="font-family:'Barlow Condensed';font-size:1.15rem;">{{ mas_ofensivo.equipo.nombre_corto }}</div>
+        <div style="font-family:'Barlow Condensed';font-size:1.8rem;color:var(--primary);">{{ mas_ofensivo.pf }}</div>
+        <div style="font-size:.65rem;color:var(--muted);">sets ganados a favor</div>
+      </div>
+      {% endif %}
+      {% if mas_defensivo %}
+      <div style="background:var(--primary-bg);border:1px solid #bfdbfe;border-radius:10px;padding:.85rem;text-align:center;">
+        <div style="font-size:.65rem;color:var(--primary-dark);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:.3rem;">🛡️ Menos Sets En Contra</div>
+        <div style="font-family:'Barlow Condensed';font-size:1.15rem;">{{ mas_defensivo.equipo.nombre_corto }}</div>
+        <div style="font-family:'Barlow Condensed';font-size:1.8rem;color:var(--primary-dark);">{{ mas_defensivo.pc }}</div>
+        <div style="font-size:.65rem;color:var(--muted);">sets en contra</div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if stats_col %}
+    {% with stats_col.0 as lider %}
+    <div style="background:linear-gradient(135deg,var(--primary-bg),var(--primary-bg));border:1px solid #bfdbfe;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:1rem;">
+      <div style="font-size:2rem;">🏆</div>
+      <div style="flex:1;">
+        <div style="font-size:.65rem;color:var(--primary-dark);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Líder del Torneo</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;letter-spacing:1px;">{{ lider.equipo.nombre_corto }}</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:2.4rem;color:var(--primary);line-height:1;">{{ lider.pg }}</div>
+        <div style="font-size:.65rem;color:var(--primary-dark);text-transform:uppercase;letter-spacing:.5px;">victorias</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:2.4rem;color:var(--primary-light);line-height:1;">{{ lider.pf }}</div>
+        <div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">sets favor</div>
+      </div>
+    </div>
+    {% endwith %}
+
+    <div style="overflow-x:auto;">
+      <table class="cosfa-table-pro">
+        <thead>
+          <tr>
+            <th style="width:36px;">#</th>
+            <th>Equipo</th>
+            <th>PJ</th>
+            <th style="color:#90caf9;">G</th>
+            <th style="color:#fca5a5;">P</th>
+            <th>SF</th>
+            <th>SC</th>
+            <th>DS</th>
+            <th>Racha</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for s in stats_col %}
+        <tr class="{% if forloop.counter == 1 %}top1{% elif forloop.counter == 2 %}top2{% elif forloop.counter == 3 %}top3{% endif %}">
+          <td style="font-weight:800;font-size:.9rem;text-align:center;">
+            {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}<span style="color:#d1d5db;">{{ forloop.counter }}</span>{% endif %}
+          </td>
+          <td>
+            <a href="{% url 'vista_grado' s.equipo.grado.pk %}" style="font-weight:700;color:var(--primary);text-decoration:none;font-size:.85rem;">{{ s.equipo.nombre_corto }}</a>
+          </td>
+          <td style="color:var(--muted);font-weight:600;">{{ s.pj }}</td>
+          <td><span style="background:var(--primary-bg);color:var(--primary-dark);font-weight:700;padding:2px 8px;border-radius:6px;font-size:.8rem;">{{ s.pg }}</span></td>
+          <td><span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:6px;font-size:.8rem;">{{ s.pp }}</span></td>
+          <td style="font-weight:700;">{{ s.pf }}</td>
+          <td style="color:var(--muted);">{{ s.pc }}</td>
+          <td style="{% if s.pf > s.pc %}color:var(--primary-dark);{% elif s.pf < s.pc %}color:#e02424;{% endif %}font-weight:700;">
+            {% if s.pf >= s.pc %}+{% endif %}{{ s.pf|add:"-"|add:s.pc }}
+          </td>
+          <td>
+            {% if s.pj > 0 %}
+            <div style="display:flex;align-items:center;gap:.4rem;">
+              <div class="mini-win-bar">
+                <div class="mini-win-fill" style="width:{% widthratio s.pg s.pj 100 %}%;background:linear-gradient(90deg,var(--primary),var(--primary-light));"></div>
+              </div>
+              <span style="font-size:.72rem;color:var(--muted);">{% widthratio s.pg s.pj 100 %}%</span>
+            </div>
+            {% else %}–{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><i class="bi bi-dribbble"></i> Sin partidos de voleibol aún.</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% if user.is_staff %}</div></div>{% endif %}
+{% endblock %}

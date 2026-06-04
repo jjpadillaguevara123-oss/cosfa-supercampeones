@@ -1,0 +1,145 @@
+{% extends 'core/base.html' %}
+{% block title %}Dashboard – COSFA Admin{% endblock %}
+{% block content %}
+<div class="admin-wrap">
+  {% include 'core/partials/sidebar.html' with active='dashboard' %}
+  <div class="admin-content">
+
+    <div class="page-header fade-up">
+      <div>
+        <div class="page-title">Dashboard <span>General</span></div>
+        <div class="page-subtitle">Resumen del sistema y torneo activo</div>
+      </div>
+      <a href="{% url 'home' %}?user_view=1" class="btn-cosfa btn-cosfa-outline">
+        <i class="bi bi-eye"></i> Vista de usuario
+      </a>
+    </div>
+
+    <!-- Stats -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:1.5rem;" class="fade-up">
+      <div class="stat-card">
+        <div class="stat-icon-box stat-icon-green"><i class="bi bi-people-fill"></i></div>
+        <div><div class="stat-num">{{ total_jugadores }}</div><div class="stat-lbl">Jugadores</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon-box stat-icon-yellow"><i class="bi bi-calendar3"></i></div>
+        <div><div class="stat-num">{{ total_partidos }}</div><div class="stat-lbl">Partidos</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon-box stat-icon-green"><i class="bi bi-check-circle-fill"></i></div>
+        <div><div class="stat-num">{{ partidos_jugados }}</div><div class="stat-lbl">Jugados</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon-box stat-icon-purple"><i class="bi bi-mortarboard-fill"></i></div>
+        <div><div class="stat-num">{{ total_grados }}</div><div class="stat-lbl">Grados</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon-box stat-icon-yellow"><i class="bi bi-bullseye"></i></div>
+        <div><div class="stat-num">{{ total_goles }}</div><div class="stat-lbl">Goles</div></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;" class="fade-up-1">
+      <!-- Acciones rápidas -->
+      <div class="cosfa-card card-green">
+        <div class="cosfa-card-title"><i class="bi bi-lightning-fill"></i> Acciones Rápidas</div>
+        <div style="display:flex;flex-direction:column;gap:.55rem;">
+          <a href="{% url 'admin_grados' %}" class="btn-cosfa btn-cosfa-primary">
+            <i class="bi bi-person-plus-fill"></i> Inscribir Jugador (vía Grado)
+          </a>
+          <a href="{% url 'admin_grado_crear' %}" class="btn-cosfa btn-cosfa-outline">
+            <i class="bi bi-mortarboard-fill"></i> Registrar Grado
+          </a>
+          <a href="{% url 'admin_partido_crear' %}" class="btn-cosfa btn-cosfa-secondary">
+            <i class="bi bi-calendar-plus-fill"></i> Crear Partido
+          </a>
+          <a href="{% url 'sorteo_paises' %}" class="btn-cosfa btn-cosfa-secondary">
+            <i class="bi bi-globe2"></i> Sorteo de Países
+          </a>
+          <a href="{% url 'admin_sorteo_grupos' %}" class="btn-cosfa btn-cosfa-secondary">
+            <i class="bi bi-shuffle"></i> Sorteo de Grupos
+          </a>
+        </div>
+      </div>
+
+      <!-- Partidos hoy -->
+      <div class="cosfa-card card-yellow">
+        <div class="cosfa-card-title"><i class="bi bi-calendar-event-fill"></i> Partidos Hoy</div>
+        {% for p in partidos_hoy %}
+        <div class="match-card" style="margin-bottom:.6rem;font-size:.82rem;">
+          <div style="text-align:right;">
+            <strong>{{ p.equipo_local.nombre_corto }}</strong>
+            <div class="match-country">{{ p.equipo_local.pais|default:"" }}</div>
+          </div>
+          <div>
+            {% if p.jugado %}
+            <div class="match-score" style="font-size:1.6rem;">{{ p.puntos_local }}<span style="color:var(--muted);font-size:1.1rem;margin:0 .1rem;">–</span>{{ p.puntos_visitante }}</div>
+            {% else %}
+            <div class="match-vs">VS</div>
+            {% if p.hora %}<div style="font-size:.65rem;color:var(--muted);text-align:center;">{{ p.hora }}</div>{% endif %}
+            {% endif %}
+          </div>
+          <div>
+            <strong>{{ p.equipo_visitante.nombre_corto }}</strong>
+            <div class="match-country">{{ p.equipo_visitante.pais|default:"" }}</div>
+          </div>
+        </div>
+        {% empty %}
+        <div style="text-align:center;padding:2rem 1rem;">
+          <i class="bi bi-calendar-x" style="font-size:2rem;color:var(--muted);display:block;margin-bottom:.5rem;"></i>
+          <p style="color:var(--muted);font-size:.84rem;">Sin partidos hoy.</p>
+        </div>
+        {% endfor %}
+        <div style="text-align:right;margin-top:.5rem;">
+          <a href="{% url 'admin_partidos' %}" class="btn-cosfa btn-cosfa-secondary btn-cosfa-sm">
+            Ver todos <i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grados por ciclo -->
+    <div class="cosfa-card fade-up-2" style="margin-top:1.25rem;">
+      <div class="cosfa-card-title"><i class="bi bi-mortarboard-fill"></i> Grados Registrados</div>
+      {% regroup grados by ciclo as by_ciclo %}
+      {% for grp in by_ciclo %}
+      <div style="margin-bottom:1rem;">
+        <div style="font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem;">
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--primary);"></span>
+          Ciclo {{ grp.grouper }}
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:.4rem;">
+          {% for g in grp.list %}
+          <a href="{% url 'admin_grado_detalle' g.pk %}" style="text-decoration:none;">
+            <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:.35rem .8rem;font-size:.81rem;font-weight:700;color:var(--text-2);transition:all .15s;" onmouseover="this.style.background='var(--primary-bg)';this.style.borderColor='#90caf9';this.style.color='var(--primary-dark)'" onmouseout="this.style.background='var(--bg)';this.style.borderColor='var(--border)';this.style.color='var(--text-2)'">
+              {{ g }}{% if g.pais %} <span style="font-weight:400;opacity:.55;font-size:.72rem;">{{ g.pais }}</span>{% endif %}
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Top goleadores -->
+    {% if top_goles %}
+    <div class="cosfa-card fade-up-3" style="margin-top:1.25rem;">
+      <div class="cosfa-card-title"><i class="bi bi-award-fill"></i> Top Goleadores</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;">
+        {% for g in top_goles %}
+        <a href="{% url 'perfil_jugador' g.jugador__id %}" class="player-row" style="border:1.5px solid var(--border);border-radius:10px;padding:.6rem .85rem;border-bottom:1.5px solid var(--border) !important;text-decoration:none;">
+          <div class="player-av">{{ g.jugador__nombre|first }}{{ g.jugador__apellido|first }}</div>
+          <div style="flex:1;">
+            <div style="font-size:.82rem;font-weight:700;color:var(--text);">{{ g.jugador__nombre }} {{ g.jugador__apellido }}</div>
+            <div style="font-size:.7rem;color:var(--muted);">{{ g.jugador__grado__pais|default:"–" }}</div>
+          </div>
+          <div class="font-sport" style="font-size:1.7rem;color:var(--primary);">{{ g.total }}</div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

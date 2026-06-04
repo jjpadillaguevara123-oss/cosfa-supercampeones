@@ -1,0 +1,315 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ titulo }} – Admin{% endblock %}
+{% block content %}
+<div class="admin-wrap">
+  {% include 'core/partials/sidebar.html' with active='partidos' %}
+  <div class="admin-content">
+    <div class="page-header">
+      <div class="page-title">{{ titulo }}</div>
+      <a href="{% url 'admin_partidos' %}" class="btn-cosfa btn-cosfa-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+    </div>
+    <div style="display:grid;grid-template-columns:{% if partido %}1fr 1fr{% else %}1fr{% endif %};gap:1.25rem;align-items:start;">
+
+      <!-- Formulario -->
+      <div class="cosfa-card fade-up">
+        <div class="cosfa-card-title">Datos del Partido</div>
+        <form method="POST">
+          {% csrf_token %}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+            <div class="mb-3"><label class="form-label">Equipo Local</label>{{ form.equipo_local }}</div>
+            <div class="mb-3"><label class="form-label">Equipo Visitante</label>{{ form.equipo_visitante }}</div>
+            <div class="mb-3"><label class="form-label">Fecha (cuándo se jugó)</label>{{ form.fecha }}</div>
+            <div class="mb-3"><label class="form-label">Hora (opcional)</label>{{ form.hora }}</div>
+            <div class="mb-3"><label class="form-label">Deporte</label>{{ form.deporte }}</div>
+            <div class="mb-3"><label class="form-label">Ciclo</label>{{ form.ciclo }}</div>
+            <div class="mb-3"><label class="form-label">Género</label>{{ form.genero }}</div>
+            <div class="mb-3"><label class="form-label">Fase</label>{{ form.fase }}</div>
+          </div>
+          <div class="mb-3"><label class="form-label">Grupo del Torneo</label>{{ form.grupo_torneo }}</div>
+          <!-- Marcador -->
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:1rem;">
+            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:.75rem;">
+              {% if partido %}{{ partido.label_marcador }}{% else %}Resultado{% endif %}
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+              <div class="mb-2"><label class="form-label">Local</label>{{ form.puntos_local }}</div>
+              <div class="mb-2"><label class="form-label">Visitante</label>{{ form.puntos_visitante }}</div>
+            </div>
+            <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.85rem;">{{ form.jugado }} Marcar como jugado</label>
+          </div>
+          <div class="mb-3"><label class="form-label"><i class="bi bi-facebook" style="color:#1877f2;"></i> Link Facebook</label>{{ form.link_facebook }}</div>
+          <button type="submit" name="save_partido" class="btn-cosfa btn-cosfa-primary"><i class="bi bi-check-lg"></i> Guardar</button>
+        </form>
+      </div>
+
+      <!-- Panel derecho según deporte -->
+      {% if partido %}
+      <div>
+
+        <!-- Banderas equipos -->
+        <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.25rem;margin-bottom:1rem;">
+          <div style="text-align:center;flex:1;">
+            {% if partido.equipo_local.grado.bandera %}<img src="{{ partido.equipo_local.grado.bandera.url }}" style="height:44px;border-radius:5px;margin-bottom:.3rem;display:block;margin-left:auto;margin-right:auto;">{% else %}<div style="font-size:2rem;margin-bottom:.3rem;">🏳️</div>{% endif %}
+            <div style="font-size:.78rem;font-weight:700;">{{ partido.equipo_local.nombre_corto }}</div>
+            <div style="font-size:.68rem;color:var(--muted);">{{ partido.equipo_local.pais|default:"" }}</div>
+            <div style="font-family:'Barlow Condensed';font-size:1.6rem;color:var(--primary);">{{ partido.puntos_local }}</div>
+          </div>
+          <div style="font-size:1.1rem;color:var(--muted);padding:0 .75rem;">VS</div>
+          <div style="text-align:center;flex:1;">
+            {% if partido.equipo_visitante.grado.bandera %}<img src="{{ partido.equipo_visitante.grado.bandera.url }}" style="height:44px;border-radius:5px;margin-bottom:.3rem;display:block;margin-left:auto;margin-right:auto;">{% else %}<div style="font-size:2rem;margin-bottom:.3rem;">🏳️</div>{% endif %}
+            <div style="font-size:.78rem;font-weight:700;">{{ partido.equipo_visitante.nombre_corto }}</div>
+            <div style="font-size:.68rem;color:var(--muted);">{{ partido.equipo_visitante.pais|default:"" }}</div>
+            <div style="font-family:'Barlow Condensed';font-size:1.6rem;color:#e02424;">{{ partido.puntos_visitante }}</div>
+          </div>
+        </div>
+
+        <!-- FÚTBOL -->
+        {% if partido.deporte == 'futbol' %}
+        {% if not partido.jugado %}
+        <div class="cosfa-alert alert-err" style="font-size:.78rem;">Marca el partido como jugado y guarda para poder registrar goles.</div>
+        {% else %}
+        <!-- ── GOLES LOCAL ──────────────────────────────────────────── -->
+        <div class="cosfa-card fade-up-1" style="margin-bottom:.75rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;">
+            <div class="cosfa-card-title" style="margin:0;">⚽ {{ partido.equipo_local.nombre_corto }}</div>
+            <span class="tag {% if puede_gol_local %}tag-green{% else %}tag-red{% endif %}">
+              {{ goles_local_act }}/{{ goles_local_max }} goles
+            </span>
+          </div>
+
+          <!-- Goles ya registrados -->
+          <div style="margin-bottom:.6rem;">
+            {% for ev in goles_local %}
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem .5rem;border-radius:6px;margin-bottom:.2rem;background:var(--bg);border:1px solid var(--border);font-size:.8rem;">
+              <div>
+                <div style="font-weight:600;">⚽ {{ ev.jugador.nombre_completo }}</div>
+                {% if ev.asistente %}<div style="font-size:.7rem;color:var(--muted);">🎯 {{ ev.asistente.nombre_completo }}</div>{% endif %}
+                {% if ev.minuto %}<div style="font-size:.65rem;color:var(--muted);">min. {{ ev.minuto }}</div>{% endif %}
+              </div>
+              <form method="POST" style="display:inline;">{% csrf_token %}
+                <input type="hidden" name="evento_id" value="{{ ev.pk }}">
+                <button type="submit" name="del_evento" class="btn-cosfa btn-cosfa-danger btn-cosfa-sm" onclick="return confirm('¿Eliminar este gol?')"><i class="bi bi-trash"></i></button>
+              </form>
+            </div>
+            {% empty %}
+            <p style="color:var(--muted);font-size:.78rem;margin:.3rem 0;">Sin goles registrados aún.</p>
+            {% endfor %}
+          </div>
+
+          <!-- Formulario nuevo gol local -->
+          {% if puede_gol_local %}
+          <form method="POST" style="padding-top:.65rem;border-top:1px solid var(--border);">{% csrf_token %}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem;">
+              <div>
+                <label class="form-label" style="font-size:.72rem;">Goleador *</label>
+                <select name="local-goleador" class="form-select" required>
+                  <option value="">-- Seleccionar --</option>
+                  {% for j in jug_local %}<option value="{{ j.pk }}">{{ j.nombre_completo }}</option>{% endfor %}
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size:.72rem;">Asistente (opcional)</label>
+                <select name="local-asistente" class="form-select">
+                  <option value="">-- Ninguno --</option>
+                  {% for j in jug_local %}<option value="{{ j.pk }}">{{ j.nombre_completo }}</option>{% endfor %}
+                </select>
+              </div>
+            </div>
+            <button type="submit" name="add_gol_local" class="btn-cosfa btn-cosfa-primary btn-cosfa-sm">
+              <i class="bi bi-plus-lg"></i> Agregar Gol Local
+            </button>
+          </form>
+          {% else %}
+          <div style="font-size:.75rem;color:var(--muted);padding:.4rem .6rem;background:var(--bg);border-radius:6px;margin-top:.4rem;">
+            ✅ Todos los goles del local están registrados ({{ goles_local_max }}).
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- ── GOLES VISITANTE ────────────────────────────────────────── -->
+        <div class="cosfa-card fade-up-2" style="margin-bottom:.75rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;">
+            <div class="cosfa-card-title" style="margin:0;">⚽ {{ partido.equipo_visitante.nombre_corto }}</div>
+            <span class="tag {% if puede_gol_visita %}tag-green{% else %}tag-red{% endif %}">
+              {{ goles_visita_act }}/{{ goles_visita_max }} goles
+            </span>
+          </div>
+
+          <!-- Goles ya registrados -->
+          <div style="margin-bottom:.6rem;">
+            {% for ev in goles_visita %}
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem .5rem;border-radius:6px;margin-bottom:.2rem;background:var(--bg);border:1px solid var(--border);font-size:.8rem;">
+              <div>
+                <div style="font-weight:600;">⚽ {{ ev.jugador.nombre_completo }}</div>
+                {% if ev.asistente %}<div style="font-size:.7rem;color:var(--muted);">🎯 {{ ev.asistente.nombre_completo }}</div>{% endif %}
+                {% if ev.minuto %}<div style="font-size:.65rem;color:var(--muted);">min. {{ ev.minuto }}</div>{% endif %}
+              </div>
+              <form method="POST" style="display:inline;">{% csrf_token %}
+                <input type="hidden" name="evento_id" value="{{ ev.pk }}">
+                <button type="submit" name="del_evento" class="btn-cosfa btn-cosfa-danger btn-cosfa-sm" onclick="return confirm('¿Eliminar este gol?')"><i class="bi bi-trash"></i></button>
+              </form>
+            </div>
+            {% empty %}
+            <p style="color:var(--muted);font-size:.78rem;margin:.3rem 0;">Sin goles registrados aún.</p>
+            {% endfor %}
+          </div>
+
+          <!-- Formulario nuevo gol visitante -->
+          {% if puede_gol_visita %}
+          <form method="POST" style="padding-top:.65rem;border-top:1px solid var(--border);">{% csrf_token %}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem;">
+              <div>
+                <label class="form-label" style="font-size:.72rem;">Goleador *</label>
+                <select name="visita-goleador" class="form-select" required>
+                  <option value="">-- Seleccionar --</option>
+                  {% for j in jug_visita %}<option value="{{ j.pk }}">{{ j.nombre_completo }}</option>{% endfor %}
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size:.72rem;">Asistente (opcional)</label>
+                <select name="visita-asistente" class="form-select">
+                  <option value="">-- Ninguno --</option>
+                  {% for j in jug_visita %}<option value="{{ j.pk }}">{{ j.nombre_completo }}</option>{% endfor %}
+                </select>
+              </div>
+            </div>
+            <button type="submit" name="add_gol_visita" class="btn-cosfa btn-cosfa-primary btn-cosfa-sm">
+              <i class="bi bi-plus-lg"></i> Agregar Gol Visitante
+            </button>
+          </form>
+          {% else %}
+          <div style="font-size:.75rem;color:var(--muted);padding:.4rem .6rem;background:var(--bg);border-radius:6px;margin-top:.4rem;">
+            ✅ Todos los goles del visitante están registrados ({{ goles_visita_max }}).
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- ── TARJETAS ───────────────────────────────────────────────── -->
+        <div class="cosfa-card fade-up-3">
+          <div class="cosfa-card-title">🟨 Tarjetas del Partido</div>
+
+          <!-- Tarjetas ya registradas -->
+          {% for ev in tarjetas_local %}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem .5rem;border-radius:6px;margin-bottom:.2rem;background:{% if ev.tipo == 'amarilla' %}var(--warning-bg){% else %}#fee2e2{% endif %};border:1px solid {% if ev.tipo == 'amarilla' %}rgba(234,179,8,.3){% else %}#fecaca{% endif %};font-size:.8rem;">
+            <div>
+              <div style="font-weight:600;">{% if ev.tipo == 'amarilla' %}🟨{% else %}🟥{% endif %} {{ ev.jugador.nombre_completo }}</div>
+              <div style="font-size:.7rem;color:var(--muted);">{{ partido.equipo_local.nombre_corto }}{% if ev.minuto %} · min. {{ ev.minuto }}{% endif %}</div>
+            </div>
+            <form method="POST" style="display:inline;">{% csrf_token %}
+              <input type="hidden" name="evento_id" value="{{ ev.pk }}">
+              <button type="submit" name="del_evento" class="btn-cosfa btn-cosfa-danger btn-cosfa-sm" onclick="return confirm('¿Eliminar tarjeta?')"><i class="bi bi-trash"></i></button>
+            </form>
+          </div>
+          {% endfor %}
+
+          {% for ev in tarjetas_visita %}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem .5rem;border-radius:6px;margin-bottom:.2rem;background:{% if ev.tipo == 'amarilla' %}var(--warning-bg){% else %}#fee2e2{% endif %};border:1px solid {% if ev.tipo == 'amarilla' %}rgba(234,179,8,.3){% else %}#fecaca{% endif %};font-size:.8rem;">
+            <div>
+              <div style="font-weight:600;">{% if ev.tipo == 'amarilla' %}🟨{% else %}🟥{% endif %} {{ ev.jugador.nombre_completo }}</div>
+              <div style="font-size:.7rem;color:var(--muted);">{{ partido.equipo_visitante.nombre_corto }}{% if ev.minuto %} · min. {{ ev.minuto }}{% endif %}</div>
+            </div>
+            <form method="POST" style="display:inline;">{% csrf_token %}
+              <input type="hidden" name="evento_id" value="{{ ev.pk }}">
+              <button type="submit" name="del_evento" class="btn-cosfa btn-cosfa-danger btn-cosfa-sm" onclick="return confirm('¿Eliminar tarjeta?')"><i class="bi bi-trash"></i></button>
+            </form>
+          </div>
+          {% endfor %}
+
+          {% if not tarjetas_local and not tarjetas_visita %}
+          <p style="color:var(--muted);font-size:.78rem;">Sin tarjetas registradas.</p>
+          {% endif %}
+
+          <!-- Formulario nueva tarjeta -->
+          <form method="POST" style="padding-top:.75rem;border-top:1px solid var(--border);margin-top:.6rem;">{% csrf_token %}
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.5rem;">
+              <div>
+                <label class="form-label" style="font-size:.72rem;">Tipo</label>
+                <select name="tarjeta_tipo" class="form-control">
+                  <option value="amarilla">🟨 Amarilla</option>
+                  <option value="roja">🟥 Roja</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size:.72rem;">Equipo</label>
+                <select name="tarjeta_equipo" class="form-control" id="tarjEquipo" onchange="filtrarJugTarjeta()">
+                  <option value="{{ partido.equipo_local.pk }}">{{ partido.equipo_local.nombre_corto }}</option>
+                  <option value="{{ partido.equipo_visitante.pk }}">{{ partido.equipo_visitante.nombre_corto }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label" style="font-size:.72rem;">Minuto (opt.)</label>
+                <input type="number" name="tarjeta_minuto" class="form-control" min="1" max="120" placeholder="ej. 34">
+              </div>
+            </div>
+            <div style="margin-bottom:.5rem;">
+              <label class="form-label" style="font-size:.72rem;">Jugador</label>
+              <!-- Dos selects separados: solo el activo tiene name y se envía -->
+              <select name="tarjeta_jugador" class="form-control" id="tarjJugLocal">
+                {% for j in jug_local %}<option value="{{ j.pk }}">{{ j.nombre_completo }}</option>{% endfor %}
+              </select>
+              <select name="tarjeta_jugador" class="form-control" id="tarjJugVisita" style="display:none;" disabled>
+                {% for j in jug_visita %}<option value="{{ j.pk }}">{{ j.nombre_completo }}</option>{% endfor %}
+              </select>
+            </div>
+            <button type="submit" name="add_tarjeta" class="btn-cosfa btn-cosfa-secondary btn-cosfa-sm">
+              <i class="bi bi-card-heading"></i> Registrar Tarjeta
+            </button>
+          </form>
+          <script>
+          function filtrarJugTarjeta() {
+            var eqId = document.getElementById('tarjEquipo').value;
+            var localPk = '{{ partido.equipo_local.pk }}';
+            var selLocal = document.getElementById('tarjJugLocal');
+            var selVisita = document.getElementById('tarjJugVisita');
+            if (eqId === localPk) {
+              selLocal.style.display = ''; selLocal.disabled = false;
+              selVisita.style.display = 'none'; selVisita.disabled = true;
+            } else {
+              selVisita.style.display = ''; selVisita.disabled = false;
+              selLocal.style.display = 'none'; selLocal.disabled = true;
+            }
+          }
+          </script>
+        </div>
+        {% endif %}
+
+        <!-- BALONCESTO -->
+        {% elif partido.deporte == 'baloncesto' %}
+        <div class="cosfa-card fade-up-1">
+          <div class="cosfa-card-title">🏀 Baloncesto — Marcador Final</div>
+          <div style="background:var(--warning-bg);border:1px solid rgba(234,179,8,.3);border-radius:8px;padding:.75rem;font-size:.8rem;color:var(--warning);"><i class="bi bi-info-circle"></i> Actualiza los puntos en el formulario y marca como jugado. No se registran datos individuales.</div>
+          {% if partido.link_facebook %}<a href="{{ partido.link_facebook }}" target="_blank" class="btn-cosfa btn-cosfa-outline btn-cosfa-sm" style="margin-top:.75rem;"><i class="bi bi-facebook"></i> Ver partido</a>{% endif %}
+        </div>
+
+        <!-- VOLEIBOL -->
+        {% elif partido.deporte == 'voleibol' %}
+        <div class="cosfa-card fade-up-1">
+          <div class="cosfa-card-title">🏐 Voleibol — Sets</div>
+          {% for s in sets_vb %}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:.45rem .75rem;border-radius:7px;margin-bottom:.3rem;background:{% if s.ganador == 'local' %}var(--primary-bg){% elif s.ganador == 'visita' %}#fef2f2{% else %}var(--bg){% endif %};border:1px solid {% if s.ganador == 'local' %}#bfdbfe{% elif s.ganador == 'visita' %}#fecaca{% else %}var(--border){% endif %};">
+            <div style="font-size:.75rem;font-weight:700;color:var(--muted);">Set {{ s.numero_set }}</div>
+            <div style="font-family:'Barlow Condensed';font-size:1.2rem;color:{% if s.ganador == 'local' %}var(--primary){% elif s.ganador == 'visita' %}#e02424{% else %}var(--text-2){% endif %};">{{ s.puntos_local }}–{{ s.puntos_visita }}</div>
+            <div style="font-size:.7rem;color:var(--muted);">{% if s.ganador == 'local' %}{{ partido.equipo_local.nombre_corto }}{% elif s.ganador == 'visita' %}{{ partido.equipo_visitante.nombre_corto }}{% else %}Empate{% endif %}</div>
+            <form method="POST" style="display:inline;">{% csrf_token %}<input type="hidden" name="set_id" value="{{ s.pk }}"><button type="submit" name="del_set" class="btn-cosfa btn-cosfa-danger btn-cosfa-sm" onclick="return confirm('¿Eliminar set?')"><i class="bi bi-trash"></i></button></form>
+          </div>
+          {% endfor %}
+          <form method="POST">{% csrf_token %}
+            <input type="hidden" name="num_set" value="{{ sets_vb|length|add:1 }}">
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:.85rem;margin-top:.75rem;">
+              <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:.6rem;">Set {{ sets_vb|length|add:1 }}</div>
+              <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:.5rem;align-items:center;">
+                <div><div style="font-size:.7rem;color:var(--muted);margin-bottom:.2rem;">{{ partido.equipo_local.nombre_corto }}</div><input type="number" name="set_local" min="0" max="99" value="0" class="form-control" style="text-align:center;"></div>
+                <div style="text-align:center;color:var(--muted);font-weight:700;padding-top:1.2rem;">–</div>
+                <div><div style="font-size:.7rem;color:var(--muted);margin-bottom:.2rem;">{{ partido.equipo_visitante.nombre_corto }}</div><input type="number" name="set_visita" min="0" max="99" value="0" class="form-control" style="text-align:center;"></div>
+              </div>
+              <button type="submit" name="save_set" class="btn-cosfa btn-cosfa-primary btn-cosfa-sm" style="margin-top:.65rem;width:100%;justify-content:center;"><i class="bi bi-plus-lg"></i> Guardar Set {{ sets_vb|length|add:1 }}</button>
+            </div>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

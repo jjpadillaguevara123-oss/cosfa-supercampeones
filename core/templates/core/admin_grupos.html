@@ -1,0 +1,44 @@
+{% extends 'core/base.html' %}
+{% block title %}Grupos – Admin{% endblock %}
+{% block content %}
+<div class="admin-wrap">
+  {% include 'core/partials/sidebar.html' with active='grupos' %}
+  <div class="admin-content">
+    <div class="page-header fade-up">
+      <div>
+        <div class="page-title">Grupos del <span>Torneo</span></div>
+        <div class="page-subtitle">Organización de grupos y fases</div>
+      </div>
+      <a href="{% url 'admin_grupo_crear' %}" class="btn-cosfa btn-cosfa-primary">
+        <i class="bi bi-plus-lg"></i> Crear Grupo
+      </a>
+    </div>
+    {% for g in grupos %}
+    <div class="cosfa-card fade-up" style="margin-bottom:1.1rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem;flex-wrap:wrap;gap:.5rem;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">{{ g }}</div>
+        <span class="tag tag-green">{{ g.get_ciclo_display }}</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+        {% for e in g.equipos.all %}
+        <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:.45rem .9rem;font-size:.83rem;font-weight:600;color:var(--text-2);">
+          <i class="bi bi-shield-fill" style="color:var(--primary);font-size:.7rem;"></i>
+          {{ e.get_grado_display }}{{ e.grupo }}{% if e.pais %} – {{ e.pais }}{% endif %}
+        </div>
+        {% empty %}
+        <p style="color:var(--muted);font-size:.84rem;font-style:italic;">Sin equipos asignados.</p>
+        {% endfor %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="cosfa-card fade-up" style="text-align:center;padding:3rem;color:var(--muted);">
+      <i class="bi bi-collection" style="font-size:2.5rem;display:block;margin-bottom:.75rem;"></i>
+      <p>No hay grupos creados. Crea grupos para organizar el torneo.</p>
+      <a href="{% url 'admin_grupo_crear' %}" class="btn-cosfa btn-cosfa-primary" style="margin-top:1rem;">
+        <i class="bi bi-plus-lg"></i> Crear Primer Grupo
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

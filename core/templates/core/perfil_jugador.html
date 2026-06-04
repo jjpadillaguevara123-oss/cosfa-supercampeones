@@ -1,0 +1,1024 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ jugador.nombre }} {{ jugador.apellido }} – COSFA{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════
+   PÁGINA CONTENEDORA
+═══════════════════════════════════════════════════════ */
+.pj-page {
+  min-height: calc(100vh - var(--nav-h, 60px));
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem 3rem;
+  transition: background .3s;
+}
+
+.pj-topbar {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.pj-nav-back {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  color: var(--muted);
+  text-decoration: none;
+  font-family: 'Poppins', sans-serif;
+  font-size: .78rem;
+  font-weight: 500;
+  padding: .4rem .9rem;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  transition: all .2s;
+}
+.pj-nav-back:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--primary-bg);
+}
+
+.pj-country-badge {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: .35rem .85rem;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+/* ═══════════════════════════════════════════════════════
+   LAYOUT 3 COLUMNAS
+═══════════════════════════════════════════════════════ */
+.pj-layout {
+  width: 100%;
+  max-width: 900px;
+  display: grid;
+  grid-template-columns: 1fr 260px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+/* ═══════════════════════════════════════════════════════
+   TARJETA LATERAL
+═══════════════════════════════════════════════════════ */
+.pj-side {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: transform .25s, box-shadow .25s;
+}
+.pj-side:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+}
+
+.pj-side-head {
+  padding: .7rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  background: var(--primary-bg);
+}
+
+.pj-side-body { padding: .75rem; }
+
+.pj-ev-row {
+  display: flex;
+  align-items: flex-start;
+  gap: .55rem;
+  padding: .5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.pj-ev-row:last-child { border-bottom: none; }
+
+.pj-ev-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--primary-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .8rem;
+  flex-shrink: 0;
+}
+
+.pj-ev-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+.pj-ev-meta {
+  font-size: .63rem;
+  color: var(--muted);
+  margin-top: .1rem;
+}
+
+.pj-stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.pj-stat-row:last-child { border-bottom: none; }
+
+.pj-stat-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: .71rem;
+  color: var(--muted);
+}
+.pj-stat-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.4rem;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.pj-insc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.pj-insc-row:last-child { border-bottom: none; }
+
+.pj-insc-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: .73rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.pj-insc-sub {
+  font-size: .62rem;
+  color: var(--muted);
+  margin-top: .08rem;
+}
+.pj-insc-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.6rem;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.pj-empty {
+  text-align: center;
+  padding: 1.2rem 0;
+  color: var(--muted);
+  font-size: .75rem;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════════
+   CARTA PRINCIPAL — FLIP
+═══════════════════════════════════════════════════════ */
+.pj-card-wrap {
+  width: 260px;
+  perspective: 1000px;
+  cursor: pointer;
+  margin: 0 auto;
+}
+
+.pj-card-inner {
+  position: relative;
+  width: 260px;
+  height: 420px;
+  transform-style: preserve-3d;
+  transition: transform .65s cubic-bezier(.4, .2, .2, 1);
+  border-radius: 16px;
+}
+
+.pj-card-wrap.flipped .pj-card-inner {
+  transform: rotateY(180deg);
+}
+
+/* ── CARA COMÚN ── */
+.pj-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+}
+
+/* ─────────────────────────────────
+   CARA FRONTAL
+───────────────────────────────── */
+.pj-front {
+  /* Tema base — sobreescrito por JS */
+  background: var(--card-grad, linear-gradient(160deg, #1e3a6e 0%, #0d1f42 60%, #081628 100%));
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.35),
+    0 0 0 1px rgba(255,255,255,.08);
+}
+
+/* Marco decorativo */
+.pj-front-frame {
+  position: absolute;
+  inset: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  pointer-events: none;
+}
+.pj-front-frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 11px;
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,.08) 0%,
+    transparent 50%,
+    rgba(255,255,255,.03) 100%
+  );
+}
+
+/* Rayos de luz */
+.pj-rays {
+  position: absolute;
+  inset: 0;
+  opacity: .22;
+  pointer-events: none;
+  overflow: hidden;
+}
+.pj-rays::before {
+  content: '';
+  position: absolute;
+  top: -30%;
+  left: 50%;
+  width: 180%;
+  height: 130%;
+  transform: translateX(-50%);
+  background: conic-gradient(
+    from 0deg at 50% 30%,
+    transparent 0deg, var(--ray-color, rgba(150,200,255,.6)) 8deg, transparent 16deg,
+    transparent 32deg, var(--ray-color, rgba(150,200,255,.5)) 40deg, transparent 48deg,
+    transparent 64deg, var(--ray-color, rgba(150,200,255,.4)) 72deg, transparent 80deg,
+    transparent 96deg, var(--ray-color, rgba(150,200,255,.6)) 104deg, transparent 112deg,
+    transparent 128deg, var(--ray-color, rgba(150,200,255,.3)) 136deg, transparent 144deg,
+    transparent 160deg, var(--ray-color, rgba(150,200,255,.5)) 168deg, transparent 176deg,
+    transparent 192deg, var(--ray-color, rgba(150,200,255,.4)) 200deg, transparent 208deg,
+    transparent 224deg, var(--ray-color, rgba(150,200,255,.6)) 232deg, transparent 240deg,
+    transparent 256deg, var(--ray-color, rgba(150,200,255,.3)) 264deg, transparent 272deg,
+    transparent 288deg, var(--ray-color, rgba(150,200,255,.5)) 296deg, transparent 304deg,
+    transparent 320deg, var(--ray-color, rgba(150,200,255,.4)) 328deg, transparent 336deg,
+    transparent 352deg, var(--ray-color, rgba(150,200,255,.6)) 360deg
+  );
+  animation: raysSpin 18s linear infinite;
+  filter: blur(3px);
+}
+@keyframes raysSpin { to { transform: translateX(-50%) rotate(360deg); } }
+
+.pj-card-wrap:hover .pj-rays { opacity: .38; }
+
+/* Glow foil en hover */
+.pj-foil {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    circle at var(--mx, 50%) var(--my, 30%),
+    rgba(255,255,255,.15) 0%,
+    transparent 55%
+  );
+  transition: opacity .2s;
+}
+.pj-card-wrap:hover .pj-foil { opacity: 1; }
+
+/* Contenido frontal */
+.pj-front-content {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 14px 16px;
+}
+
+/* Rating + posición (arriba izquierda) */
+.pj-rating-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1;
+  margin-bottom: auto;
+}
+.pj-rating-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2.4rem;
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0,0,0,.6);
+  line-height: 1;
+}
+.pj-rating-dep {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,.6);
+  text-transform: uppercase;
+  margin-top: .15rem;
+}
+
+/* País (arriba derecha) */
+.pj-card-pais {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  text-align: right;
+  z-index: 3;
+}
+.pj-card-flag { font-size: 1.5rem; display: block; line-height: 1; }
+.pj-card-pais-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: .55rem;
+  color: rgba(255,255,255,.5);
+  letter-spacing: .5px;
+  margin-top: .15rem;
+}
+
+/* Foto jugador */
+.pj-photo-zone {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  margin: 6px 0;
+  position: relative;
+}
+.pj-photo-glow {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 60px;
+  background: var(--glow-color, rgba(100,180,255,.4));
+  border-radius: 50%;
+  filter: blur(18px);
+  pointer-events: none;
+}
+.pj-photo {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,.2);
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  position: relative;
+  z-index: 1;
+}
+.pj-photo-init {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.1);
+  border: 2px solid rgba(255,255,255,.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2.6rem;
+  color: #fff;
+  position: relative;
+  z-index: 1;
+}
+
+/* Información inferior */
+.pj-front-bottom {
+  margin-top: 10px;
+  text-align: center;
+}
+.pj-player-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: .5px;
+  line-height: 1.1;
+  text-shadow: 0 2px 10px rgba(0,0,0,.5);
+}
+.pj-player-sub {
+  font-family: 'Poppins', sans-serif;
+  font-size: .65rem;
+  color: rgba(255,255,255,.5);
+  margin: .2rem 0 .6rem;
+}
+.pj-badges {
+  display: flex;
+  gap: .3rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: .5rem;
+}
+.pj-badge {
+  padding: .2rem .55rem;
+  border-radius: 20px;
+  font-family: 'Poppins', sans-serif;
+  font-size: .6rem;
+  font-weight: 600;
+  background: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.85);
+  border: 1px solid rgba(255,255,255,.18);
+  backdrop-filter: blur(4px);
+}
+.pj-equipo-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .8rem;
+  font-weight: 700;
+  color: rgba(255,255,255,.6);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Hint voltear */
+.pj-flip-hint {
+  position: absolute;
+  bottom: 8px;
+  right: 10px;
+  z-index: 3;
+  font-family: 'Poppins', sans-serif;
+  font-size: .55rem;
+  color: rgba(255,255,255,.3);
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  pointer-events: none;
+  /* Prevent text from appearing mirrored on back face */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* ─────────────────────────────────
+   CARA TRASERA
+───────────────────────────────── */
+.pj-back {
+  transform: rotateY(180deg);
+  background: var(--back-grad, linear-gradient(150deg, #141c2e 0%, #0d1321 100%));
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.35),
+    0 0 0 1px rgba(255,255,255,.06);
+}
+
+.pj-back-frame {
+  position: absolute;
+  inset: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  pointer-events: none;
+}
+
+.pj-back-content {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 16px;
+}
+
+.pj-back-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.3);
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Stats principales */
+.pj-stats-grid {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 1.5rem;
+}
+.pj-stat-box {
+  text-align: center;
+}
+.pj-stat-n {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 3rem;
+  color: #fff;
+  line-height: 1;
+  text-shadow: 0 0 20px var(--glow-color, rgba(100,180,255,.5));
+}
+.pj-stat-i {
+  font-size: 1rem;
+  margin-bottom: .1rem;
+  display: block;
+}
+.pj-stat-l {
+  font-family: 'Poppins', sans-serif;
+  font-size: .58rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: rgba(255,255,255,.35);
+  margin-top: .2rem;
+}
+
+.pj-divider {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,.07);
+  margin: 0 0 1rem;
+}
+
+/* Deportes adicionales */
+.pj-sports-section {
+  flex: 1;
+}
+.pj-sports-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.25);
+  margin-bottom: .6rem;
+  text-align: center;
+}
+.pj-sport-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .5rem .6rem;
+  border-radius: 8px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.06);
+  margin-bottom: .4rem;
+}
+.pj-sport-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: .7rem;
+  font-weight: 600;
+  color: rgba(255,255,255,.75);
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+.pj-sport-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.2rem;
+  color: var(--accent-color, #60a5fa);
+  line-height: 1;
+}
+
+/* Hint voltear reverso */
+.pj-back .pj-flip-hint {
+  color: rgba(255,255,255,.2);
+  transform: scaleX(-1); /* counter-rotate the text so it reads normally */
+}
+
+/* ═══════════════════════════════════════════════════════
+   ANIMACIÓN ENTRADA
+═══════════════════════════════════════════════════════ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pj-topbar   { animation: fadeUp .4s ease both; }
+.pj-layout   { animation: fadeUp .45s .05s ease both; }
+
+/* ═══════════════════════════════════════════════════════
+   MODO CLARO — overrides
+═══════════════════════════════════════════════════════ */
+:root:not(.dark-mode) .pj-page { background: #f1f5f9; }
+:root:not(.dark-mode) .pj-side-head { background: var(--primary-bg); }
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE MOBILE
+═══════════════════════════════════════════════════════ */
+@media (max-width: 720px) {
+  .pj-layout {
+    grid-template-columns: 1fr;
+    max-width: 320px;
+  }
+  .pj-layout .pj-side:first-child { order: 2; }
+  .pj-layout .pj-center-col       { order: 1; }
+  .pj-layout .pj-side:last-child  { order: 3; }
+}
+
+@media (max-width: 400px) {
+  .pj-card-wrap,
+  .pj-card-inner { width: 240px; }
+  .pj-card-inner { height: 385px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% with pais=jugador.grado.pais|default:"" %}
+<div class="pj-page">
+
+  <!-- TOP BAR -->
+  <div class="pj-topbar">
+    <a href="javascript:history.back()" class="pj-nav-back">
+      <i class="bi bi-arrow-left"></i> Volver
+    </a>
+    {% if pais %}
+    <div class="pj-country-badge">
+      <span id="topFlagEmoji">🌍</span>
+      <span>{{ pais }}</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- LAYOUT 3 COLUMNAS -->
+  <div class="pj-layout">
+
+    <!-- ── IZQUIERDA: EVENTOS ── -->
+    <div class="pj-side">
+      <div class="pj-side-head">
+        <i class="bi bi-lightning-charge-fill"></i> Eventos
+      </div>
+      <div class="pj-side-body">
+        {% if eventos_gol %}
+          {% for ev in eventos_gol|slice:":5" %}
+          <div class="pj-ev-row">
+            <div class="pj-ev-icon">⚽</div>
+            <div>
+              <div class="pj-ev-title">Gol vs {{ ev.partido.equipo_visitante.nombre_corto|default:ev.partido.equipo_local.nombre_corto }}</div>
+              {% if ev.asistente %}<div class="pj-ev-meta">🎯 {{ ev.asistente.nombre_completo }}</div>{% endif %}
+              <div class="pj-ev-meta">{{ ev.partido.fecha|date:"d/m/y" }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        {% elif eventos_asist %}
+          {% for ev in eventos_asist|slice:":5" %}
+          <div class="pj-ev-row">
+            <div class="pj-ev-icon">🎯</div>
+            <div>
+              <div class="pj-ev-title">Asistencia a {{ ev.jugador.nombre_completo }}</div>
+              <div class="pj-ev-meta">{{ ev.partido.fecha|date:"d/m/y" }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="pj-empty">Sin eventos registrados</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ── CENTRO: CARTA FLIP ── -->
+    <div class="pj-center-col">
+      <div class="pj-card-wrap" id="pjCard" onclick="this.classList.toggle('flipped')">
+        <div class="pj-card-inner" id="pjInner">
+
+          <!-- FRENTE -->
+          <div class="pj-face pj-front" id="pjFront">
+            <div class="pj-rays"></div>
+            <div class="pj-front-frame"></div>
+            <div class="pj-foil" id="pjFoil"></div>
+
+            <div class="pj-front-content">
+              <!-- Rating / Goles -->
+              <div class="pj-rating-box">
+                <div class="pj-rating-num">{{ total_goles|default:"0" }}</div>
+                <div class="pj-rating-dep">
+                  {% for insc in inscs|slice:":1" %}{{ insc.equipo.get_deporte_display }}{% endfor %}
+                </div>
+              </div>
+
+              <!-- País arriba derecha -->
+              {% if pais %}
+              <div class="pj-card-pais">
+                <span class="pj-card-flag" id="cardFlag">🌍</span>
+                <div class="pj-card-pais-text">{{ pais|upper|truncatechars:10 }}</div>
+              </div>
+              {% endif %}
+
+              <!-- Foto -->
+              <div class="pj-photo-zone">
+                <div class="pj-photo-glow"></div>
+                {% if jugador.foto %}
+                <img src="{{ jugador.foto.url }}" class="pj-photo" alt="{{ jugador.nombre }}">
+                {% else %}
+                <div class="pj-photo-init">{{ jugador.nombre|first }}{{ jugador.apellido|first }}</div>
+                {% endif %}
+              </div>
+
+              <!-- Info inferior -->
+              <div class="pj-front-bottom">
+                <div class="pj-player-name">{{ jugador.nombre|upper }} {{ jugador.apellido|upper }}</div>
+                <div class="pj-player-sub">#{{ inscs.first.numero_camiseta|default:"—" }} · {{ jugador.get_genero_display }}</div>
+                <div class="pj-badges">
+                  {% for insc in inscs %}
+                  <span class="pj-badge">
+                    {% if insc.equipo.deporte == 'futbol' %}⚽{% elif insc.equipo.deporte == 'baloncesto' %}🏀{% else %}🏐{% endif %}
+                    {{ insc.equipo.get_deporte_display }}
+                  </span>
+                  {% endfor %}
+                </div>
+                {% if jugador.grado %}
+                <div class="pj-equipo-name">{{ jugador.grado }}</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="pj-flip-hint"><i class="bi bi-arrow-repeat"></i> voltear</div>
+          </div>
+
+          <!-- REVERSO -->
+          <div class="pj-face pj-back" id="pjBack">
+            <div class="pj-back-frame"></div>
+
+            <div class="pj-back-content">
+              <div class="pj-back-title">Estadísticas</div>
+
+              <!-- 3 stats principales -->
+              <div class="pj-stats-grid">
+                <div class="pj-stat-box">
+                  <span class="pj-stat-i">⚽</span>
+                  <div class="pj-stat-n">{{ total_goles|default:"0" }}</div>
+                  <div class="pj-stat-l">Goles</div>
+                </div>
+                <div class="pj-stat-box">
+                  <span class="pj-stat-i">🎯</span>
+                  <div class="pj-stat-n">{{ total_asist|default:"0" }}</div>
+                  <div class="pj-stat-l">Asist.</div>
+                </div>
+                <div class="pj-stat-box">
+                  <span class="pj-stat-i">📅</span>
+                  <div class="pj-stat-n">{{ total_pj|default:"0" }}</div>
+                  <div class="pj-stat-l">PJ</div>
+                </div>
+              </div>
+
+              <hr class="pj-divider">
+
+              <!-- Deportes adicionales -->
+              {% if inscs %}
+              <div class="pj-sports-section">
+                <div class="pj-sports-label">Equipos inscritos</div>
+                {% for insc in inscs %}
+                <div class="pj-sport-row">
+                  <div class="pj-sport-name">
+                    {% if insc.equipo.deporte == 'futbol' %}⚽
+                    {% elif insc.equipo.deporte == 'baloncesto' %}🏀
+                    {% else %}🏐{% endif %}
+                    {{ insc.equipo.get_deporte_display }}
+                  </div>
+                  <div class="pj-sport-num">#{{ insc.numero_camiseta }}</div>
+                </div>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="pj-flip-hint"><i class="bi bi-arrow-repeat"></i> voltear</div>
+          </div>
+
+        </div><!-- /pj-card-inner -->
+      </div><!-- /pj-card-wrap -->
+    </div><!-- /pj-center-col -->
+
+    <!-- ── DERECHA: EQUIPOS + STATS ── -->
+    <div class="pj-side">
+      <div class="pj-side-head">
+        <i class="bi bi-shield-fill"></i> Equipos
+      </div>
+      <div class="pj-side-body">
+        {% for insc in inscs %}
+        <div class="pj-insc-row">
+          <div>
+            <div class="pj-insc-name">{{ insc.equipo.nombre_corto }}</div>
+            <div class="pj-insc-sub">{{ insc.equipo.get_deporte_display }} · {{ insc.equipo.grado }}</div>
+          </div>
+          <div class="pj-insc-num">#{{ insc.numero_camiseta }}</div>
+        </div>
+        {% empty %}
+        <div class="pj-empty">Sin equipos inscritos</div>
+        {% endfor %}
+      </div>
+
+      <div class="pj-side-head" style="margin-top: 2px;">
+        <i class="bi bi-graph-up"></i> Estadísticas
+      </div>
+      <div class="pj-side-body">
+        <div class="pj-stat-row">
+          <span class="pj-stat-label">⚽ Goles</span>
+          <span class="pj-stat-val">{{ total_goles|default:"0" }}</span>
+        </div>
+        <div class="pj-stat-row">
+          <span class="pj-stat-label">🎯 Asistencias</span>
+          <span class="pj-stat-val">{{ total_asist|default:"0" }}</span>
+        </div>
+        <div class="pj-stat-row">
+          <span class="pj-stat-label">📅 Partidos</span>
+          <span class="pj-stat-val">{{ total_pj|default:"0" }}</span>
+        </div>
+        <div class="pj-stat-row">
+          <span class="pj-stat-label">🟨 Amarillas</span>
+          <span class="pj-stat-val">{{ total_amarillas|default:"0" }}</span>
+        </div>
+        <div class="pj-stat-row">
+          <span class="pj-stat-label">🟥 Rojas</span>
+          <span class="pj-stat-val">{{ total_rojas|default:"0" }}</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /pj-layout -->
+
+</div><!-- /pj-page -->
+{% endwith %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ─── TEMAS POR PAÍS ───────────────────────────────────────
+const THEMES = {
+  argentina: {
+    grad:      'linear-gradient(160deg, #005b9e 0%, #0077c2 35%, #001f3f 100%)',
+    backGrad:  'linear-gradient(150deg, #001a35 0%, #00122a 100%)',
+    glow:      'rgba(0,180,255,.55)',
+    ray:       'rgba(120,210,255,.7)',
+    accent:    '#74cfff',
+    flag: '🇦🇷'
+  },
+  brasil: {
+    grad:      'linear-gradient(160deg, #006622 0%, #009933 35%, #002200 100%)',
+    backGrad:  'linear-gradient(150deg, #001a08 0%, #00120a 100%)',
+    glow:      'rgba(0,200,80,.5)',
+    ray:       'rgba(100,255,100,.7)',
+    accent:    '#90caf9',
+    flag: '🇧🇷'
+  },
+  brazil: {
+    grad:      'linear-gradient(160deg, #006622 0%, #009933 35%, #002200 100%)',
+    backGrad:  'linear-gradient(150deg, #001a08 0%, #00120a 100%)',
+    glow:      'rgba(0,200,80,.5)',
+    ray:       'rgba(100,255,100,.7)',
+    accent:    '#90caf9',
+    flag: '🇧🇷'
+  },
+  colombia: {
+    grad:      'linear-gradient(160deg, #8b5e00 0%, #b07d00 35%, #2a1c00 100%)',
+    backGrad:  'linear-gradient(150deg, #1a0e00 0%, #120a00 100%)',
+    glow:      'rgba(255,185,0,.55)',
+    ray:       'rgba(255,220,80,.7)',
+    accent:    '#fcd34d',
+    flag: '🇨🇴'
+  },
+  france: {
+    grad:      'linear-gradient(160deg, #00209f 0%, #0032c8 35%, #000b30 100%)',
+    backGrad:  'linear-gradient(150deg, #000820 0%, #000518 100%)',
+    glow:      'rgba(30,60,220,.55)',
+    ray:       'rgba(100,130,255,.7)',
+    accent:    '#818cf8',
+    flag: '🇫🇷'
+  },
+  alemania: {
+    grad:      'linear-gradient(160deg, #222 0%, #444 35%, #111 100%)',
+    backGrad:  'linear-gradient(150deg, #0d0d0d 0%, #080808 100%)',
+    glow:      'rgba(220,220,220,.35)',
+    ray:       'rgba(200,200,200,.6)',
+    accent:    'var(--border)',
+    flag: '🇩🇪'
+  },
+  germany: {
+    grad:      'linear-gradient(160deg, #222 0%, #444 35%, #111 100%)',
+    backGrad:  'linear-gradient(150deg, #0d0d0d 0%, #080808 100%)',
+    glow:      'rgba(220,220,220,.35)',
+    ray:       'rgba(200,200,200,.6)',
+    accent:    'var(--border)',
+    flag: '🇩🇪'
+  },
+  españa: {
+    grad:      'linear-gradient(160deg, #9b1b1b 0%, #c0392b 35%, #300505 100%)',
+    backGrad:  'linear-gradient(150deg, #1a0505 0%, #120303 100%)',
+    glow:      'rgba(200,30,30,.55)',
+    ray:       'rgba(255,100,100,.7)',
+    accent:    '#f87171',
+    flag: '🇪🇸'
+  },
+  spain: {
+    grad:      'linear-gradient(160deg, #9b1b1b 0%, #c0392b 35%, #300505 100%)',
+    backGrad:  'linear-gradient(150deg, #1a0505 0%, #120303 100%)',
+    glow:      'rgba(200,30,30,.55)',
+    ray:       'rgba(255,100,100,.7)',
+    accent:    '#f87171',
+    flag: '🇪🇸'
+  },
+  portugal: {
+    grad:      'linear-gradient(160deg, #006600 0%, #004400 35%, #001a00 100%)',
+    backGrad:  'linear-gradient(150deg, #001500 0%, #000e00 100%)',
+    glow:      'rgba(180,50,0,.45)',
+    ray:       'rgba(220,80,30,.6)',
+    accent:    '#fb923c',
+    flag: '🇵🇹'
+  },
+  italia: {
+    grad:      'linear-gradient(160deg, #003087 0%, #004ab5 35%, #000c25 100%)',
+    backGrad:  'linear-gradient(150deg, #000a1f 0%, #000615 100%)',
+    glow:      'rgba(0,100,220,.5)',
+    ray:       'rgba(80,150,255,.7)',
+    accent:    '#38bdf8',
+    flag: '🇮🇹'
+  },
+  italy: {
+    grad:      'linear-gradient(160deg, #003087 0%, #004ab5 35%, #000c25 100%)',
+    backGrad:  'linear-gradient(150deg, #000a1f 0%, #000615 100%)',
+    glow:      'rgba(0,100,220,.5)',
+    ray:       'rgba(80,150,255,.7)',
+    accent:    '#38bdf8',
+    flag: '🇮🇹'
+  },
+  inglaterra: {
+    grad:      'linear-gradient(160deg, #8b0000 0%, #aa0000 35%, #200000 100%)',
+    backGrad:  'linear-gradient(150deg, #150000 0%, #0d0000 100%)',
+    glow:      'rgba(180,0,40,.5)',
+    ray:       'rgba(255,80,80,.6)',
+    accent:    '#fda4af',
+    flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿'
+  },
+  england: {
+    grad:      'linear-gradient(160deg, #8b0000 0%, #aa0000 35%, #200000 100%)',
+    backGrad:  'linear-gradient(150deg, #150000 0%, #0d0000 100%)',
+    glow:      'rgba(180,0,40,.5)',
+    ray:       'rgba(255,80,80,.6)',
+    accent:    '#fda4af',
+    flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿'
+  },
+  default: {
+    grad:      'linear-gradient(160deg, #1e3a6e 0%, #0d2448 35%, #060e1e 100%)',
+    backGrad:  'linear-gradient(150deg, #0d1420 0%, #080e18 100%)',
+    glow:      'rgba(30,100,220,.45)',
+    ray:       'rgba(100,160,255,.6)',
+    accent:    '#60a5fa',
+    flag: '🌍'
+  }
+};
+
+const rawPais = "{{ jugador.grado.pais|default:''|lower }}";
+const key = Object.keys(THEMES).find(k => k !== 'default' && rawPais.includes(k)) || 'default';
+const T = THEMES[key];
+
+// Aplicar tema a la carta
+const front = document.getElementById('pjFront');
+const back  = document.getElementById('pjBack');
+if (front) {
+  front.style.background = T.grad;
+  front.style.setProperty('--glow-color', T.glow);
+  front.style.setProperty('--ray-color', T.ray);
+}
+if (back) {
+  back.style.background = T.backGrad;
+  back.style.setProperty('--glow-color', T.glow);
+  back.style.setProperty('--accent-color', T.accent);
+}
+
+// Emojis bandera
+document.querySelectorAll('#topFlagEmoji, #cardFlag').forEach(el => {
+  if (el) el.textContent = T.flag;
+});
+
+// ─── FOIL — tracking del mouse ─────────────────────────
+const card = document.getElementById('pjCard');
+const foil = document.getElementById('pjFoil');
+if (card && foil) {
+  card.addEventListener('mousemove', function(e) {
+    if (this.classList.contains('flipped')) return;
+    const r = this.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width  * 100).toFixed(1) + '%';
+    const y = ((e.clientY - r.top)  / r.height * 100).toFixed(1) + '%';
+    foil.style.setProperty('--mx', x);
+    foil.style.setProperty('--my', y);
+  });
+}
+</script>
+{% endblock %}

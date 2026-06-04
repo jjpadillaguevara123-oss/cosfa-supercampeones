@@ -1,0 +1,70 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ grado }} – Detalle{% endblock %}
+{% block extra_css %}
+<style>
+.jugador-link-row{
+  display:flex;align-items:center;gap:.6rem;padding:.5rem .75rem;
+  background:var(--bg);border-radius:7px;text-decoration:none;
+  color:var(--text);border:1px solid var(--border);transition:all .15s;
+}
+.jugador-link-row:hover{border-color:var(--primary);color:var(--text);}
+</style>
+{% endblock %}
+{% block content %}
+<div class="admin-wrap">
+  {% include 'core/partials/sidebar.html' with active='grados' %}
+  <div class="admin-content">
+    <div class="page-header fade-up">
+      <div style="display:flex;align-items:center;gap:1rem;">
+        {% if grado.bandera %}<img src="{{ grado.bandera.url }}" style="height:52px;border-radius:6px;border:1px solid var(--border);">{% endif %}
+        <div>
+          <div class="page-title">{{ grado }} <span>— {{ grado.pais|default:"Sin país" }}</span></div>
+          <span class="tag tag-blue">Ciclo {{ grado.ciclo }}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:.5rem;">
+        <a href="{% url 'admin_jugador_crear_en_grado' grado.pk %}" class="btn-cosfa btn-cosfa-primary"><i class="bi bi-person-plus-fill"></i> Inscribir Jugador</a>
+        <a href="{% url 'admin_grado_editar' grado.pk %}" class="btn-cosfa btn-cosfa-secondary"><i class="bi bi-pencil"></i> Editar</a>
+        <a href="{% url 'admin_grados' %}" class="btn-cosfa btn-cosfa-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+      </div>
+    </div>
+    {% for eq in equipos %}
+    <div class="cosfa-card fade-up" style="margin-bottom:1.25rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem;">
+        <div style="display:flex;align-items:center;gap:.75rem;">
+          {% if eq.imagen %}<img src="{{ eq.imagen.url }}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid var(--border);">{% endif %}
+          <div>
+            <div style="font-weight:700;font-size:.95rem;">{{ eq.get_deporte_display }}
+              {% if eq.genero == 'M' %}<span class="tag tag-blue">Masculino</span>
+              {% elif eq.genero == 'F' %}<span class="tag tag-red">Femenino</span>
+              {% else %}<span class="tag tag-purple">Mixto</span>{% endif %}
+            </div>
+            {% if eq.capitan %}<div style="font-size:.75rem;color:var(--muted);">⭐ Capitán: {{ eq.capitan.nombre_completo }}</div>{% endif %}
+          </div>
+        </div>
+        <a href="{% url 'admin_equipo_editar' eq.pk %}" class="btn-cosfa btn-cosfa-secondary btn-cosfa-sm"><i class="bi bi-pencil"></i> Editar equipo</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem;">
+        {% for insc in eq.inscripciones.all %}
+        <a href="{% url 'perfil_jugador' insc.jugador.pk %}" class="jugador-link-row">
+          <div class="player-av" style="width:32px;height:32px;font-size:.75rem;">
+            {% if insc.jugador.foto %}<img src="{{ insc.jugador.foto.url }}">{% else %}{{ insc.jugador.nombre|first }}{{ insc.jugador.apellido|first }}{% endif %}
+          </div>
+          <div>
+            <div style="font-size:.82rem;font-weight:600;">{{ insc.jugador.nombre_completo }}</div>
+            <div style="font-size:.7rem;color:var(--muted);">#{{ insc.numero_camiseta }} · T.I. {{ insc.jugador.ti }}</div>
+          </div>
+        </a>
+        {% empty %}
+        <p style="color:var(--muted);font-size:.82rem;">Sin jugadores inscritos en este equipo.</p>
+        {% endfor %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="cosfa-card" style="text-align:center;padding:2rem;color:var(--muted);">
+      <p>No hay equipos configurados para este grado.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

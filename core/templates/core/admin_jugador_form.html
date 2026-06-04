@@ -1,0 +1,221 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ titulo }} – Admin{% endblock %}
+{% block extra_css %}
+<style>
+.form-unified { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+@media(max-width:700px){ .form-unified{grid-template-columns:1fr;} }
+.section-divider{
+  display:flex;align-items:center;gap:.75rem;margin:1rem 0 .75rem;
+}
+.section-divider span{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);white-space:nowrap;}
+.section-divider hr{flex:1;border:none;border-top:1px solid var(--border);}
+.foto-preview{width:72px;height:90px;border-radius:8px;object-fit:cover;border:2px solid var(--border);margin-top:.4rem;display:block;}
+.insc-row{display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border);font-size:.84rem;}
+.insc-row:last-child{border-bottom:none;}
+</style>
+{% endblock %}
+{% block content %}
+<div class="admin-wrap">
+  {% include 'core/partials/sidebar.html' with active='grados' %}
+  <div class="admin-content">
+
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <div class="page-title">{{ titulo }}</div>
+        {% if grado_obj %}
+        <div style="display:flex;align-items:center;gap:.5rem;margin-top:.35rem;flex-wrap:wrap;">
+          <span class="tag tag-blue"><i class="bi bi-mortarboard"></i> {{ grado_obj }}</span>
+          {% if grado_obj.pais %}<span class="tag tag-green"><i class="bi bi-globe2"></i> {{ grado_obj.pais }}</span>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% if grado_obj %}
+      <a href="{% url 'admin_grado_detalle' grado_obj.pk %}" class="btn-cosfa btn-cosfa-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al Grado
+      </a>
+      {% else %}
+      <a href="{% url 'admin_grados' %}" class="btn-cosfa btn-cosfa-secondary">
+        <i class="bi bi-arrow-left"></i> Volver
+      </a>
+      {% endif %}
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr{% if not jugador %} {% else %} 1fr{% endif %};gap:1.25rem;align-items:start;">
+
+      <!-- FORMULARIO UNIFICADO -->
+      <div class="cosfa-card fade-up">
+        {% if jugador %}
+        <div class="cosfa-card-title"><i class="bi bi-person-gear" style="color:var(--primary);"></i> Datos del Jugador</div>
+        {% else %}
+        <div class="cosfa-card-title"><i class="bi bi-person-plus" style="color:var(--primary);"></i> Inscribir Jugador al Grado</div>
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data" id="mainForm">
+          {% csrf_token %}
+
+          <!-- Datos personales -->
+          <div class="form-unified">
+            <div class="mb-3">
+              <label class="form-label">Tarjeta de Identidad (T.I.)</label>
+              {{ form.ti }}
+              {% if form.ti.errors %}<div style="color:#e02424;font-size:.72rem;margin-top:.2rem;">{{ form.ti.errors|join:', ' }}</div>{% endif %}
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Género</label>
+              {{ form.genero }}
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Nombre</label>
+              {{ form.nombre }}
+              {% if form.nombre.errors %}<div style="color:#e02424;font-size:.72rem;margin-top:.2rem;">{{ form.nombre.errors|join:', ' }}</div>{% endif %}
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Apellido</label>
+              {{ form.apellido }}
+              {% if form.apellido.errors %}<div style="color:#e02424;font-size:.72rem;margin-top:.2rem;">{{ form.apellido.errors|join:', ' }}</div>{% endif %}
+            </div>
+          </div>
+
+          <!-- Grado (oculto si viene con grado_obj) -->
+          {% if grado_obj %}
+          <input type="hidden" name="grado" value="{{ grado_obj.pk }}">
+          {% else %}
+          <div class="mb-3">
+            <label class="form-label">Grado Académico</label>
+            {{ form.grado }}
+          </div>
+          {% endif %}
+
+          <!-- Foto -->
+          <div class="mb-3">
+            <label class="form-label">Foto del Carnet</label>
+            {{ form.foto }}
+            {% if jugador and jugador.foto %}
+            <img src="{{ jugador.foto.url }}" class="foto-preview" alt="Foto actual">
+            {% endif %}
+          </div>
+
+          {% if not jugador %}
+          <!-- ── INSCRIPCIÓN AL EQUIPO (solo en creación) ── -->
+          <div class="section-divider">
+            <hr><span>Asignación a Equipo</span><hr>
+          </div>
+
+          <div style="background:var(--primary-bg);border:1px solid #bfdbfe;border-radius:8px;padding:.75rem;margin-bottom:1rem;font-size:.78rem;color:var(--primary);">
+            <i class="bi bi-info-circle"></i>
+            Selecciona el equipo al que pertenecerá este jugador dentro de <strong>{{ grado_obj|default:"este grado" }}</strong>.
+            Los equipos mostrados corresponden a dicho grado.
+          </div>
+
+          <div class="form-unified">
+            <div class="mb-3">
+              <label class="form-label">Equipo</label>
+              {{ insc_form.equipo }}
+              {% if insc_form.equipo.errors %}<div style="color:#e02424;font-size:.72rem;margin-top:.2rem;">{{ insc_form.equipo.errors|join:', ' }}</div>{% endif %}
+            </div>
+            <div class="mb-3">
+              <label class="form-label">N° Camiseta</label>
+              {{ insc_form.numero_camiseta }}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Botón principal -->
+          <div style="display:flex;gap:.75rem;align-items:center;margin-top:.5rem;">
+            <button type="submit" name="{% if jugador %}save_jugador{% else %}crear_jugador{% endif %}" class="btn-cosfa btn-cosfa-primary" style="flex:1;justify-content:center;">
+              <i class="bi bi-check-lg"></i>
+              {% if jugador %}Guardar Cambios{% else %}Inscribir Jugador{% endif %}
+            </button>
+            {% if grado_obj %}
+            <a href="{% url 'admin_grado_detalle' grado_obj.pk %}" class="btn-cosfa btn-cosfa-secondary">Cancelar</a>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+
+      {% if jugador %}
+      <!-- PANEL DERECHO: Inscripciones actuales + agregar nueva -->
+      <div>
+        <div class="cosfa-card fade-up-1" style="margin-bottom:1rem;">
+          <div class="cosfa-card-title"><i class="bi bi-plus-circle" style="color:var(--success);"></i> Agregar a Equipo</div>
+          <form method="POST">
+            {% csrf_token %}
+            <div class="mb-3"><label class="form-label">Equipo</label>{{ insc_form.equipo }}</div>
+            <div class="mb-3"><label class="form-label">N° Camiseta</label>{{ insc_form.numero_camiseta }}</div>
+            <button type="submit" name="add_insc" class="btn-cosfa btn-cosfa-outline" style="width:100%;justify-content:center;">
+              <i class="bi bi-plus-lg"></i> Agregar Inscripción
+            </button>
+          </form>
+        </div>
+
+        {% if inscripciones %}
+        <div class="cosfa-card fade-up-2">
+          <div class="cosfa-card-title"><i class="bi bi-list-check" style="color:var(--warning);"></i> Inscripciones Actuales</div>
+          {% for i in inscripciones %}
+          <div class="insc-row">
+            <div>
+              <div style="font-weight:600;">{{ i.equipo }}</div>
+              <div style="color:var(--muted);font-size:.72rem;">{{ i.equipo.get_deporte_display }} · {{ i.equipo.get_genero_display }} · Camiseta #{{ i.numero_camiseta }}</div>
+            </div>
+            <a href="{% url 'admin_insc_eliminar' i.pk %}" class="btn-cosfa btn-cosfa-danger btn-cosfa-sm"
+               onclick="return confirm('¿Eliminar esta inscripción?')">
+              <i class="bi bi-trash"></i>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="cosfa-card fade-up-2" style="text-align:center;padding:2rem;">
+          <div style="font-size:2rem;margin-bottom:.5rem;">📋</div>
+          <div style="color:var(--muted);font-size:.84rem;">Sin inscripciones en equipos aún</div>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const gradoSel  = document.getElementById('id_grado');
+  const equipoSel = document.getElementById('id_equipo');
+  if (!gradoSel || !equipoSel) return;
+
+  function cargarEquipos(gradoId, selVal) {
+    if (!gradoId) {
+      equipoSel.innerHTML = '<option value="">---------</option>';
+      return;
+    }
+    fetch('{% url "equipos_por_grado" %}?grado_id=' + gradoId)
+      .then(r => r.json())
+      .then(data => {
+        equipoSel.innerHTML = '<option value="">— Seleccionar equipo —</option>';
+        if (!data.equipos || !data.equipos.length) {
+          equipoSel.innerHTML += '<option value="" disabled>Sin equipos en este grado</option>';
+          return;
+        }
+        data.equipos.forEach(eq => {
+          const opt = document.createElement('option');
+          opt.value = eq.id;
+          opt.textContent = eq.nombre;
+          if (String(eq.id) === String(selVal)) opt.selected = true;
+          equipoSel.appendChild(opt);
+        });
+      })
+      .catch(() => {
+        equipoSel.innerHTML = '<option value="">Error cargando equipos</option>';
+      });
+  }
+
+  gradoSel.addEventListener('change', () => cargarEquipos(gradoSel.value, ''));
+  const gradoActual  = gradoSel.value;
+  const equipoActual = equipoSel.value;
+  if (gradoActual) cargarEquipos(gradoActual, equipoActual);
+})();
+</script>
+{% endblock %}

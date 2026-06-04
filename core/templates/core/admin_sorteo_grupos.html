@@ -1,0 +1,344 @@
+{% extends 'core/base.html' %}
+{% block title %}Sorteo de Grupos – Admin{% endblock %}
+{% block extra_css %}
+<style>
+#rouletteCanvas{border-radius:50%;box-shadow:0 4px 24px rgba(13,71,161,.18);}
+.spin-btn{background:var(--primary);color:#fff;border:none;padding:.6rem 2rem;border-radius:50px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;letter-spacing:2px;margin-top:1rem;transition:all .2s;box-shadow:0 4px 12px rgba(13,71,161,.3);}
+.spin-btn:hover{background:var(--primary-dark);transform:scale(1.04);}
+.spin-btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+.arrow-ptr{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:24px solid var(--primary);z-index:10;}
+.equipo-chip{display:inline-flex;align-items:center;gap:.3rem;background:var(--primary-bg);border:1px solid #bfdbfe;border-radius:20px;padding:.22rem .65rem;font-size:.74rem;font-weight:600;margin:.18rem;color:var(--primary);}
+.equipo-chip.grupo-a{background:#f0fdf4;border-color:#bfdbfe;color:var(--primary-dark);}
+.equipo-chip.grupo-b{background:#fef2f2;border-color:#fecaca;color:#e02424;}
+#sorteo-log{max-height:180px;overflow-y:auto;font-size:.78rem;}
+.log-item{padding:.35rem .5rem;border-radius:6px;margin-bottom:.3rem;font-size:.78rem;}
+.log-a{background:#f0fdf4;color:var(--primary-dark);}
+.log-b{background:#fef2f2;color:#e02424;}
+</style>
+{% endblock %}
+{% block content %}
+<div class="admin-wrap">
+  {% include 'core/partials/sidebar.html' with active='sorteo' %}
+  <div class="admin-content">
+    <div class="page-header fade-up"><div class="page-title">Sorteo de <span>Grupos</span></div></div>
+
+    <!-- Filtros -->
+    <div class="cosfa-card fade-up" style="margin-bottom:1.1rem;padding:1rem;">
+      <form method="GET" style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-end;">
+        <div><label class="form-label">Ciclo</label>
+          <select name="ciclo" class="form-select" style="width:auto;" onchange="this.form.submit()">
+            {% for c,n in ciclos %}<option value="{{ c }}" {% if ciclo == c %}selected{% endif %}>{{ n }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label class="form-label">Deporte</label>
+          <select name="deporte" class="form-select" style="width:auto;" onchange="this.form.submit()">
+            {% for c,n in deportes %}<option value="{{ c }}" {% if deporte == c %}selected{% endif %}>{{ n }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label class="form-label">Género</label>
+          <select name="genero" class="form-select" style="width:auto;" onchange="this.form.submit()">
+            {% for c,n in generos %}<option value="{{ c }}" {% if genero == c %}selected{% endif %}>{{ n }}</option>{% endfor %}
+          </select>
+        </div>
+      </form>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:start;">
+
+      <!-- RULETA FUNCIONAL -->
+      <div class="cosfa-card fade-up-1">
+        <div class="cosfa-card-title">🎯 Ruleta de Sorteo — <span style="color:var(--primary);">Funcional</span></div>
+        <p style="font-size:.8rem;color:var(--muted);margin-bottom:.9rem;">
+          <strong>{{ equipos_disp|length }}</strong> equipo(s) disponibles para
+          <strong>Ciclo {{ ciclo }} · {{ deporte|capfirst }} · {{ genero }}</strong>.<br>
+          La ruleta gira uno a uno: asigna cada equipo a Grupo A o Grupo B alternando.
+        </p>
+
+        <div style="display:flex;flex-direction:column;align-items:center;">
+          <div style="position:relative;">
+            <div class="arrow-ptr"></div>
+            <canvas id="rouletteCanvas" width="300" height="300"></canvas>
+          </div>
+          <button id="spinBtn" class="spin-btn" onclick="spinNext()">🎯 SORTEAR SIGUIENTE</button>
+          <div id="spinStatus" style="margin-top:.6rem;font-size:.82rem;color:var(--muted);text-align:center;">
+            Presiona para sortear equipo por equipo
+          </div>
+        </div>
+
+        <div style="margin-top:1rem;">
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:.4rem;">Asignaciones</div>
+          <div id="sorteo-log"></div>
+        </div>
+
+        <!-- Grupos en tiempo real -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-top:.75rem;">
+          <div style="background:#f0fdf4;border-radius:8px;padding:.75rem;border:1px solid #bfdbfe;">
+            <div style="font-size:.7rem;font-weight:700;color:var(--primary-dark);margin-bottom:.4rem;">GRUPO A</div>
+            <div id="preview-a" style="font-size:.75rem;color:var(--text-2);">–</div>
+          </div>
+          <div style="background:#fef2f2;border-radius:8px;padding:.75rem;border:1px solid #fecaca;">
+            <div style="font-size:.7rem;font-weight:700;color:#e02424;margin-bottom:.4rem;">GRUPO B</div>
+            <div id="preview-b" style="font-size:.75rem;color:var(--text-2);">–</div>
+          </div>
+        </div>
+
+        <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap;">
+          <button id="confirmarBtn" class="btn-cosfa btn-cosfa-success" onclick="confirmarSorteo()" disabled style="flex:1;justify-content:center;opacity:.4;">
+            <i class="bi bi-check-all"></i> Confirmar y Guardar Sorteo
+          </button>
+          <button onclick="reiniciarRuleta()" class="btn-cosfa btn-cosfa-secondary btn-cosfa-sm">↺ Reiniciar</button>
+        </div>
+
+        <hr style="border-color:var(--border);margin:1rem 0;">
+
+        <!-- Botón sorteo completo directo -->
+        {% if equipos_disp %}
+        <form method="POST">
+          {% csrf_token %}
+          <p style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem;">O ejecuta el sorteo automático sin animación:</p>
+          {% if grupos_exist %}<div class="cosfa-alert alert-err" style="font-size:.74rem;margin-bottom:.5rem;">⚠️ Sobreescribirá el sorteo actual.</div>{% endif %}
+          <button type="submit" name="ejecutar_sorteo" class="btn-cosfa btn-cosfa-outline btn-cosfa-sm" style="width:100%;justify-content:center;">
+            <i class="bi bi-shuffle"></i> Sorteo Automático (sin animación)
+          </button>
+        </form>
+        {% else %}
+        <p style="color:var(--muted);font-size:.82rem;text-align:center;">Sin equipos disponibles.</p>
+        {% endif %}
+      </div>
+
+      <!-- Panel derecho: grupos y resultados -->
+      <div>
+        {% if grupos_exist %}
+        {% for gt in grupos_exist %}
+        <div class="cosfa-card fade-up-2" style="margin-bottom:1rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+            <div style="font-weight:700;font-size:.92rem;">{{ gt }}</div>
+            {% if gt.fase_grupos_terminada %}<span class="tag tag-green">✓ Fase terminada</span>{% endif %}
+          </div>
+          <div style="margin-bottom:.75rem;">
+            {% for eq in gt.equipos.all %}<span class="equipo-chip">{{ eq.nombre_corto }}{% if eq.pais %} · {{ eq.pais }}{% endif %}</span>{% endfor %}
+          </div>
+          {% for p in gt.partidos.all %}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:.32rem 0;border-top:1px solid var(--border);font-size:.76rem;">
+            <span>{{ p.equipo_local.nombre_corto }}</span>
+            <span style="{% if p.jugado %}font-family:'Barlow Condensed';font-size:.95rem;color:var(--primary);{% else %}color:var(--muted);{% endif %}">
+              {% if p.jugado %}{{ p.puntos_local }}–{{ p.puntos_visitante }}{% else %}{{ p.fecha }}{% endif %}
+            </span>
+            <span>{{ p.equipo_visitante.nombre_corto }}</span>
+            <a href="{% url 'admin_partido_editar' p.pk %}" class="btn-cosfa btn-cosfa-secondary btn-cosfa-sm"><i class="bi bi-pencil"></i></a>
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+
+        <div class="cosfa-card fade-up-3">
+          <div class="cosfa-card-title">🏆 Terminar Fase de Grupos</div>
+          <p style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem;">Genera Final (1°A vs 1°B) y Tercer Puesto (2°A vs 2°B).</p>
+          {% for gt in grupos_exist %}{% if not gt.fase_grupos_terminada %}
+          <form method="POST">{% csrf_token %}
+            <button type="submit" name="terminar_fase_grupos" class="btn-cosfa btn-cosfa-success" style="width:100%;justify-content:center;">
+              <i class="bi bi-check-all"></i> Terminar Fase y Generar Finales
+            </button>
+          </form>
+          {% endif %}{% endfor %}
+          {% for gt in grupos_exist %}{% if gt.fase_grupos_terminada %}<div class="cosfa-alert alert-ok">✅ Fase terminada. Finales generadas.</div>{% endif %}{% endfor %}
+        </div>
+
+        {% else %}
+        <div class="cosfa-card" style="text-align:center;padding:2.5rem;color:var(--muted);">
+          <i class="bi bi-diagram-3" style="font-size:2.5rem;color:#d1d5db;"></i>
+          <p style="margin-top:.75rem;font-size:.88rem;">Sin grupos para esta categoría.<br>Usa la ruleta para sortear.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF = "{{ csrf_token }}";
+const BASE_PATH = "{{ request.path }}";
+const QUERY = "?ciclo={{ ciclo }}&deporte={{ deporte }}&genero={{ genero }}";
+const equipos = {{ equipos_json|safe }};
+
+// Estado del sorteo
+let pendientes = [...equipos];
+let grupoA = [];
+let grupoB = [];
+let turnoA = true; // Alterna A/B
+let spinning = false;
+let sorteado = false;
+
+// Canvas
+const canvas = document.getElementById('rouletteCanvas');
+const ctx = canvas.getContext('2d');
+const W=canvas.width, H=canvas.height, CX=W/2, CY=H/2, R=W/2-10;
+let angle = 0;
+const COLORS=['var(--primary)','#e02424','var(--primary-dark)','var(--warning)','var(--primary)','#0e9f6e','#c27803','#6366f1','#db2777','#0284c7'];
+
+function drawWheel(items) {
+  ctx.clearRect(0,0,W,H);
+  if(!items.length){
+    ctx.fillStyle='var(--bg)'; ctx.beginPath(); ctx.arc(CX,CY,R,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='var(--muted)'; ctx.textAlign='center'; ctx.font='13px Inter';
+    ctx.fillText('Todos asignados',CX,CY); return;
+  }
+  const slice=(2*Math.PI)/items.length;
+  for(let i=0;i<items.length;i++){
+    const s=angle+i*slice, e=s+slice;
+    ctx.beginPath(); ctx.moveTo(CX,CY); ctx.arc(CX,CY,R,s,e); ctx.closePath();
+    ctx.fillStyle=COLORS[i%COLORS.length]; ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.3)'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.save(); ctx.translate(CX,CY); ctx.rotate(s+slice/2);
+    ctx.textAlign='right'; ctx.fillStyle='#fff';
+    const fs=Math.min(12,240/items.length+5);
+    ctx.font=`600 ${fs}px Inter`;
+    ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=3;
+    const lbl=items[i].nombre.length>12?items[i].nombre.slice(0,11)+'…':items[i].nombre;
+    ctx.fillText(lbl, R-12, 4); ctx.restore();
+  }
+  ctx.beginPath(); ctx.arc(CX,CY,24,0,Math.PI*2);
+  ctx.fillStyle='#fff'; ctx.fill();
+  ctx.strokeStyle='var(--border)'; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle='var(--primary)'; ctx.font='bold 14px Inter';
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.shadowBlur=0;
+  ctx.fillText('⚽',CX,CY);
+}
+
+function spinNext() {
+  if(spinning || pendientes.length === 0) return;
+  spinning = true;
+  document.getElementById('spinBtn').disabled = true;
+  document.getElementById('spinStatus').textContent = 'Girando...';
+
+  const extra = 2000 + Math.random()*2500;
+  const dur   = 3000 + Math.random()*1500;
+  const t0 = performance.now(), a0 = angle;
+
+  function frame(now) {
+    const p = Math.min((now-t0)/dur, 1);
+    const ease = 1 - Math.pow(1-p, 4);
+    angle = a0 + extra * ease;
+    drawWheel(pendientes);
+    if(p < 1){ requestAnimationFrame(frame); return; }
+
+    // Determinar ganador
+    const sl = (2*Math.PI)/pendientes.length;
+    const norm = (((-angle%(2*Math.PI))+2*Math.PI)%(2*Math.PI));
+    const idx = Math.floor(norm/sl) % pendientes.length;
+    const ganador = pendientes[idx];
+
+    // Asignar a grupo
+    const grupo = turnoA ? 'A' : 'B';
+    turnoA = !turnoA;
+    if(grupo === 'A') grupoA.push(ganador);
+    else grupoB.push(ganador);
+
+    // Quitar de pendientes
+    pendientes.splice(idx, 1);
+    drawWheel(pendientes);
+
+    // Log visual
+    const log = document.getElementById('sorteo-log');
+    const item = document.createElement('div');
+    item.className = `log-item log-${grupo.toLowerCase()}`;
+    item.innerHTML = `<strong>${ganador.nombre}</strong>${ganador.pais ? ' · '+ganador.pais : ''} → <strong>Grupo ${grupo}</strong>`;
+    log.prepend(item);
+
+    // Actualizar previews
+    document.getElementById('preview-a').innerHTML = grupoA.map(e=>`<div>• ${e.nombre}</div>`).join('') || '–';
+    document.getElementById('preview-b').innerHTML = grupoB.map(e=>`<div>• ${e.nombre}</div>`).join('') || '–';
+
+    spinning = false;
+    document.getElementById('spinBtn').disabled = false;
+
+    if(pendientes.length === 0){
+      document.getElementById('spinBtn').disabled = true;
+      document.getElementById('spinStatus').textContent = '✅ Todos los equipos asignados. Confirma el sorteo.';
+      document.getElementById('confirmarBtn').disabled = false;
+      document.getElementById('confirmarBtn').style.opacity = '1';
+      sorteado = true;
+    } else {
+      document.getElementById('spinStatus').textContent = `Quedan ${pendientes.length} equipo(s). Turno: Grupo ${turnoA?'A':'B'}`;
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+async function confirmarSorteo() {
+  if(!sorteado || !grupoA.length) return;
+  document.getElementById('confirmarBtn').disabled = true;
+  document.getElementById('confirmarBtn').textContent = 'Guardando...';
+
+  // Envía los IDs al backend usando el formulario POST existente
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = BASE_PATH + QUERY;
+  const csrf = document.createElement('input');
+  csrf.type='hidden'; csrf.name='csrfmiddlewaretoken'; csrf.value=CSRF;
+  form.appendChild(csrf);
+  const btn = document.createElement('input');
+  btn.type='hidden'; btn.name='ejecutar_sorteo'; btn.value='1';
+  form.appendChild(btn);
+  // Enviar IDs en orden: A primero, B después (el backend divide por mitad)
+  const ordered = [...grupoA, ...grupoB];
+  ordered.forEach(e => {
+    const inp = document.createElement('input');
+    inp.type='hidden'; inp.name='equipos_sel'; inp.value=e.id;
+    form.appendChild(inp);
+  });
+  document.body.appendChild(form);
+  form.submit();
+}
+
+function reiniciarRuleta() {
+  pendientes = [...equipos];
+  grupoA = []; grupoB = [];
+  turnoA = true; sorteado = false; angle = 0;
+  drawWheel(pendientes);
+  document.getElementById('sorteo-log').innerHTML = '';
+  document.getElementById('preview-a').innerHTML = '–';
+  document.getElementById('preview-b').innerHTML = '–';
+  document.getElementById('spinBtn').disabled = false;
+  document.getElementById('confirmarBtn').disabled = true;
+  document.getElementById('confirmarBtn').style.opacity = '.4';
+  document.getElementById('confirmarBtn').innerHTML = '<i class="bi bi-check-all"></i> Confirmar y Guardar Sorteo';
+  document.getElementById('spinStatus').textContent = 'Presiona para sortear equipo por equipo';
+}
+
+// Init
+drawWheel(pendientes);
+if(!pendientes.length){
+  document.getElementById('spinBtn').disabled = true;
+  document.getElementById('spinStatus').textContent = 'Sin equipos disponibles para esta categoría.';
+}
+
+// Si ya hay grupos existentes, mostrar en la ruleta los equipos que quedan (ninguno pendiente)
+// y mostrar en los previews los grupos actuales del servidor
+{% if grupos_exist %}
+(function() {
+  const gruposExist = {};
+  {% for gt in grupos_exist %}
+  gruposExist['{{ gt.nombre }}'] = [{% for eq in gt.equipos.all %}{ nombre:'{{ eq.nombre_corto|escapejs }}', pais:'{{ eq.pais|default:""}}' }{% if not forloop.last %},{% endif %}{% endfor %}];
+  {% endfor %}
+  const preA = document.getElementById('preview-a');
+  const preB = document.getElementById('preview-b');
+  if (gruposExist['A'] && gruposExist['A'].length) {
+    grupoA = gruposExist['A'];
+    preA.innerHTML = gruposExist['A'].map(e => `<div>• ${e.nombre}</div>`).join('');
+  }
+  if (gruposExist['B'] && gruposExist['B'].length) {
+    grupoB = gruposExist['B'];
+    preB.innerHTML = gruposExist['B'].map(e => `<div>• ${e.nombre}</div>`).join('');
+  }
+  // Ruleta vacía (todos ya asignados), mostrar ícono final
+  pendientes = [];
+  drawWheel(pendientes);
+  document.getElementById('spinBtn').disabled = true;
+  document.getElementById('spinStatus').textContent = '✅ Sorteo actual cargado. Usa "Reiniciar" para hacer uno nuevo.';
+})();
+{% endif %}
+</script>
+{% endblock %}

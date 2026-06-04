@@ -1,0 +1,79 @@
+{% extends 'core/base.html' %}
+{% block title %}Grados – COSFA Admin{% endblock %}
+{% block content %}
+<div class="admin-wrap">
+  {% include 'core/partials/sidebar.html' with active='grados' %}
+  <div class="admin-content">
+
+    <div class="page-header fade-up">
+      <div>
+        <div class="page-title">Grados <span>Académicos</span></div>
+        <div class="page-subtitle">Gestión de grados y sus equipos</div>
+      </div>
+      <div style="display:flex;gap:.5rem;">
+        <a href="{% url 'sorteo_paises' %}" class="btn-cosfa btn-cosfa-secondary">
+          <i class="bi bi-globe2"></i> Sortear Países
+        </a>
+        <a href="{% url 'admin_grado_crear' %}" class="btn-cosfa btn-cosfa-primary">
+          <i class="bi bi-plus-lg"></i> Registrar Grado
+        </a>
+      </div>
+    </div>
+
+    <!-- Filtro ciclo -->
+    <div class="cosfa-card fade-up" style="margin-bottom:1.1rem;padding:.85rem 1.1rem;">
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
+        <span style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">
+          <i class="bi bi-funnel-fill" style="color:var(--primary);"></i> Ciclo:
+        </span>
+        <a href="{% url 'admin_grados' %}" class="btn-cosfa btn-cosfa-sm {% if not ciclo_sel %}btn-cosfa-primary{% else %}btn-cosfa-secondary{% endif %}">Todos</a>
+        {% for code,name in ciclos %}
+        <a href="?ciclo={{ code }}" class="btn-cosfa btn-cosfa-sm {% if ciclo_sel == code %}btn-cosfa-primary{% else %}btn-cosfa-secondary{% endif %}">{{ name }}</a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Grid grados -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:1rem;" class="fade-up-1">
+      {% for g in grados %}
+      <div style="background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm);transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.boxShadow='var(--sh-p)';this.style.transform='translateY(-3px)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='var(--shadow-sm)';this.style.transform='none'">
+        <a href="{% url 'admin_grado_detalle' g.pk %}" style="display:block;">
+          {% if g.bandera %}
+          <img src="{{ g.bandera.url }}" style="width:100%;height:130px;object-fit:cover;" alt="{{ g.pais }}">
+          {% else %}
+          <div style="width:100%;height:130px;background:linear-gradient(135deg,var(--primary-dark),var(--primary-dark));display:flex;align-items:center;justify-content:center;">
+            <i class="bi bi-mortarboard-fill" style="font-size:2.5rem;color:rgba(255,255,255,.3);"></i>
+          </div>
+          {% endif %}
+        </a>
+        <div style="padding:.8rem .9rem;">
+          <div class="font-display" style="font-size:1.2rem;color:var(--text);line-height:1.1;">{{ g }}</div>
+          <div style="font-size:.76rem;color:var(--muted);margin:.2rem 0 .4rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            <i class="bi bi-globe2" style="font-size:.65rem;"></i> {{ g.pais|default:"Sin país" }}
+          </div>
+          <span class="tag tag-green" style="font-size:.58rem;">Ciclo {{ g.ciclo }}</span>
+          <div style="font-size:.66rem;color:var(--muted);margin-top:.35rem;">
+            <i class="bi bi-people-fill" style="font-size:.6rem;"></i> {{ g.jugadores.count }} jug.
+            &nbsp;·&nbsp;
+            <i class="bi bi-shield-fill" style="font-size:.6rem;"></i> {{ g.equipos.count }} eq.
+          </div>
+          <div style="display:flex;gap:.3rem;margin-top:.65rem;">
+            <a href="{% url 'admin_grado_editar' g.pk %}" class="btn-cosfa btn-cosfa-secondary btn-cosfa-sm" style="flex:1;justify-content:center;" title="Editar"><i class="bi bi-pencil-fill"></i></a>
+            <a href="{% url 'admin_grado_eliminar' g.pk %}" class="btn-cosfa btn-cosfa-danger btn-cosfa-sm" style="flex:1;justify-content:center;" title="Eliminar"><i class="bi bi-trash-fill"></i></a>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="cosfa-card" style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted);">
+        <i class="bi bi-mortarboard" style="font-size:2.5rem;display:block;margin-bottom:.75rem;"></i>
+        <p>No hay grados registrados.</p>
+        <a href="{% url 'admin_grado_crear' %}" class="btn-cosfa btn-cosfa-primary" style="margin-top:1rem;">
+          <i class="bi bi-plus-lg"></i> Registrar primer grado
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

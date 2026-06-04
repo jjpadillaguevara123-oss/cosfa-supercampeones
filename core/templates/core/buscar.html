@@ -1,0 +1,30 @@
+{% extends 'core/base.html' %}
+{% block title %}Buscar – COSFA{% endblock %}
+{% block content %}
+<div style="max-width:900px;margin:0 auto;padding:1.75rem;">
+  <div class="page-header fade-up"><div class="page-title">Buscar <span>Jugadores</span></div></div>
+  <div style="max-width:560px;margin:0 auto 2rem;">
+    <form method="GET">{{ form.q }}</form>
+  </div>
+  {% if query %}
+  <div style="font-size:.82rem;color:var(--muted);margin-bottom:1rem;">{{ resultados.count }} resultado(s) para "<strong>{{ query }}</strong>"</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.9rem;">
+    {% for j in resultados %}
+    <a href="{% url 'perfil_jugador' j.pk %}" style="display:flex;align-items:center;gap:.75rem;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.9rem;text-decoration:none;color:var(--text);transition:all .15s;box-shadow:0 1px 3px rgba(0,0,0,.06);" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'" class="fade-up">
+      <div class="player-av">{% if j.foto %}<img src="{{ j.foto.url }}">{% else %}{{ j.nombre|first }}{{ j.apellido|first }}{% endif %}</div>
+      <div>
+        <div style="font-weight:600;font-size:.88rem;">{{ j.nombre_completo }}</div>
+        <div style="font-size:.72rem;color:var(--muted);">T.I. {{ j.ti }}</div>
+        {% if j.grado %}<div style="font-size:.72rem;color:var(--muted);">{{ j.grado }}{% if j.grado.pais %} · {{ j.grado.pais }}{% endif %}</div>{% endif %}
+      </div>
+    </a>
+    {% empty %}
+    <div class="cosfa-card" style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted);">
+      <i class="bi bi-search" style="font-size:2.5rem;color:var(--muted);"></i>
+      <p style="margin-top:.75rem;">No se encontraron resultados para "{{ query }}"</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

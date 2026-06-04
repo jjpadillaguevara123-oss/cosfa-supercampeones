@@ -1,0 +1,73 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ grado }} – COSFA{% endblock %}
+{% block extra_css %}<style>.sport-tab{padding:.42rem 1rem;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:.82rem;font-weight:600;transition:all .15s;}.sport-tab.active{background:var(--primary);color:#fff;border-color:var(--primary);}</style>{% endblock %}
+{% block content %}
+<div style="max-width:1100px;margin:0 auto;padding:1.75rem;">
+  <a href="{% url 'home' %}" class="btn-cosfa btn-cosfa-secondary" style="margin-bottom:1.25rem;display:inline-flex;"><i class="bi bi-arrow-left"></i> Inicio</a>
+  <!-- Header -->
+  <div style="background:linear-gradient(135deg,var(--primary),var(--primary));border-radius:12px;padding:1.75rem;color:#fff;margin-bottom:1.5rem;display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;">
+    {% if grado.bandera %}<img src="{{ grado.bandera.url }}" style="height:70px;border-radius:8px;border:3px solid rgba(255,255,255,.3);">{% else %}<div style="font-size:3.5rem;">🏳️</div>{% endif %}
+    <div>
+      <div style="font-family:'Barlow Condensed';font-size:2rem;letter-spacing:2px;">{{ grado }} — {{ grado.pais|default:"Sin país" }}</div>
+      <div style="opacity:.8;font-size:.9rem;margin-top:.2rem;">{{ grado.ciclo_name }}</div>
+    </div>
+  </div>
+  <!-- Sport tabs -->
+  <div style="display:flex;gap:.4rem;margin-bottom:1.1rem;flex-wrap:wrap;" class="fade-up">
+    {% for ed in equipos_data %}
+    <button class="sport-tab {% if forloop.first %}active{% endif %}" onclick="showPanel('p-{{ ed.deporte }}-{{ ed.genero }}',this)">
+      {% if ed.deporte == 'futbol' %}⚽{% elif ed.deporte == 'baloncesto' %}🏀{% else %}🏐{% endif %}
+      {{ ed.deporte_label }} {% if ed.genero != 'X' %}{{ ed.genero_label }}{% else %}Mixto{% endif %}
+    </button>
+    {% endfor %}
+  </div>
+  {% for ed in equipos_data %}
+  <div id="p-{{ ed.deporte }}-{{ ed.genero }}" class="{% if not forloop.first %}hidden{% endif %}">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:start;">
+      <div class="cosfa-card fade-up">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <div class="cosfa-card-title" style="margin:0;">Jugadores ({{ ed.inscs.count }})</div>
+          {% if ed.equipo.capitan %}<div style="font-size:.75rem;color:var(--warning);">⭐ {{ ed.equipo.capitan.nombre_completo }}</div>{% endif %}
+        </div>
+        {% if ed.equipo.imagen %}<img src="{{ ed.equipo.imagen.url }}" style="width:100%;height:100px;object-fit:cover;border-radius:8px;margin-bottom:.9rem;opacity:.85;">{% endif %}
+        {% for insc in ed.inscs %}
+        <a href="{% url 'perfil_jugador' insc.jugador.pk %}" class="player-row">
+          <div class="player-av" style="width:34px;height:34px;font-size:.75rem;">{% if insc.jugador.foto %}<img src="{{ insc.jugador.foto.url }}">{% else %}{{ insc.jugador.nombre|first }}{{ insc.jugador.apellido|first }}{% endif %}</div>
+          <div style="flex:1;"><div style="font-size:.84rem;font-weight:600;">{{ insc.jugador.nombre_completo }}{% if ed.equipo.capitan == insc.jugador %} <span style="color:var(--warning);font-size:.65rem;">⭐ CAP</span>{% endif %}</div><div style="font-size:.7rem;color:var(--muted);">#{{ insc.numero_camiseta }}</div></div>
+        </a>
+        {% empty %}<p style="color:var(--muted);font-size:.82rem;">Sin jugadores inscritos.</p>{% endfor %}
+      </div>
+      <div>
+        {# Siempre mostramos la tabla de posición (aunque sean 0, indica que el equipo existe) #}
+        <div class="cosfa-card fade-up-1" style="margin-bottom:1rem;">
+          <div class="cosfa-card-title">Posición en el Torneo</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem;text-align:center;margin-bottom:.75rem;">
+            <div style="background:var(--bg);border-radius:7px;padding:.55rem .3rem;"><div style="font-weight:700;font-size:1.15rem;">{{ ed.tabla_pos.pj }}</div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;">PJ</div></div>
+            <div style="background:#f0fdf4;border-radius:7px;padding:.55rem .3rem;"><div style="font-weight:700;font-size:1.15rem;color:var(--primary-dark);">{{ ed.tabla_pos.pg }}</div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;">PG</div></div>
+            <div style="background:#fef9ed;border-radius:7px;padding:.55rem .3rem;"><div style="font-weight:700;font-size:1.15rem;color:var(--warning);">{{ ed.tabla_pos.pe }}</div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;">PE</div></div>
+            <div style="background:#fef2f2;border-radius:7px;padding:.55rem .3rem;"><div style="font-weight:700;font-size:1.15rem;color:#e02424;">{{ ed.tabla_pos.pp }}</div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;">PP</div></div>
+            <div style="background:var(--primary-bg);border-radius:7px;padding:.55rem .3rem;"><div style="font-weight:700;font-size:1.15rem;color:var(--primary);">{{ ed.tabla_pos.pts }}</div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;">PTS</div></div>
+          </div>
+          {% if ed.tabla_pos.pj > 0 %}
+          <div style="font-size:.72rem;color:var(--muted);text-align:center;">GF: {{ ed.tabla_pos.gf }} · GC: {{ ed.tabla_pos.gc }} · DG: {% if ed.tabla_pos.dg > 0 %}+{% endif %}{{ ed.tabla_pos.dg }}</div>
+          {% endif %}
+        </div>
+        {% if ed.partidos %}
+        <div class="cosfa-card fade-up-2">
+          <div class="cosfa-card-title">Partidos Recientes</div>
+          {% for p in ed.partidos %}
+          <div class="match-card" style="margin-bottom:.5rem;">
+            <div style="text-align:right;"><div style="font-size:.78rem;font-weight:600;">{{ p.equipo_local.nombre_corto }}</div></div>
+            <div>{% if p.jugado %}<div class="match-score" style="font-size:1.3rem;">{{ p.puntos_local }}–{{ p.puntos_visitante }}</div>{% else %}<div class="match-vs">VS</div><div style="font-size:.65rem;color:var(--muted);text-align:center;">{{ p.fecha }}</div>{% endif %}</div>
+            <div><div style="font-size:.78rem;font-weight:600;">{{ p.equipo_visitante.nombre_corto }}</div></div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% empty %}<div class="cosfa-card" style="text-align:center;padding:2.5rem;color:var(--muted);"><p>Sin equipos para este grado.</p></div>{% endfor %}
+</div>
+{% endblock %}
+{% block extra_js %}<script>function showPanel(id,btn){document.querySelectorAll('[id^="p-"]').forEach(p=>p.classList.add('hidden'));document.querySelectorAll('.sport-tab').forEach(t=>t.classList.remove('active'));document.getElementById(id).classList.remove('hidden');btn.classList.add('active');}</script>{% endblock %}

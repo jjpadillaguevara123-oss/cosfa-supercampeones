@@ -1,0 +1,314 @@
+{% extends 'core/base.html' %}
+{% load cosfa_extras %}
+{% block title %}Inicio – COSFA Supercampeones{% endblock %}
+{% block extra_css %}
+<style>
+/* ── home-specific ── */
+.grados-slider-wrap{position:relative;padding:0 22px;}
+.section-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:.6rem;}
+.section-title-lg{font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:800;color:var(--text);margin-bottom:.35rem;}
+.section-title-lg span{color:var(--primary);}
+</style>
+{% endblock %}
+
+{% block content %}
+
+  <!-- ══════════ HERO FULL WIDTH ══════════ -->
+  {% if imagenes %}
+  <div class="cosfa-carousel fade-up" style="margin-bottom:2.5rem;border-radius:0;">
+    <div class="carousel-inner-cosfa" id="carouselInner">
+      {% for img in imagenes %}
+      <div class="carousel-slide">
+        <img src="{{ img.imagen.url }}" alt="{{ img.titulo|default:'COSFA' }}">
+        <div class="carousel-caption-cosfa">
+          {% if img.titulo %}<h2>{{ img.titulo }}</h2>{% endif %}
+          {% if img.subtitulo %}<p>{{ img.subtitulo }}</p>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <button class="carousel-btn-cosfa c-prev" onclick="cMove(-1)"><i class="bi bi-chevron-left"></i></button>
+    <button class="carousel-btn-cosfa c-next" onclick="cMove(1)"><i class="bi bi-chevron-right"></i></button>
+    <div style="position:absolute;bottom:.85rem;left:50%;transform:translateX(-50%);display:flex;gap:.4rem;" id="cDots">
+      {% for img in imagenes %}<div onclick="cGo({{ forloop.counter0 }})" class="cdot" style="width:{% if forloop.first %}18{% else %}7{% endif %}px;height:7px;border-radius:20px;background:{% if forloop.first %}#fff{% else %}rgba(255,255,255,.45){% endif %};cursor:pointer;"></div>{% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <!-- Hero estadio estático full-width -->
+  <div class="hero-banner fade-up" style="margin-bottom:2.5rem;border-radius:0;height:480px;">
+    <img src="https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1400&q=80&auto=format&fit=crop" alt="Estadio" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">
+    <div class="hero-banner-overlay">
+      <div class="hero-badge"><i class="bi bi-trophy-fill"></i> Temporada 2025</div>
+      <h1 class="hero-title">COSFA SUPERCAMPEONES</h1>
+      <p class="hero-sub1">Torneos Interclases · Colegio San Francisco de Asís</p>
+      <p class="hero-sub2">Cada grado representa una selección nacional</p>
+      <a href="{% url 'partidos_view' %}" class="hero-cta"><i class="bi bi-calendar3"></i> Ver Calendario</a>
+    </div>
+  </div>
+  {% endif %}
+
+<div style="max-width:1200px;margin:0 auto;padding:0 1.5rem 3rem;">
+
+  <!-- ══════════ DISCIPLINAS ══════════ -->
+  <div style="margin-bottom:2.5rem;" class="fade-up-1">
+    <div style="text-align:center;margin-bottom:1.75rem;">
+      <div class="section-title-lg">Selecciona una <span>Disciplina</span></div>
+      <p style="color:var(--muted);font-size:.9rem;">Elige el deporte para ver cronogramas, equipos y resultados</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;">
+      <!-- Fútbol Sala -->
+      <a href="{% url 'partidos_view' %}?deporte=futbol" class="discipline-card">
+        <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=600&q=80&auto=format&fit=crop" alt="Fútbol">
+        <div class="discipline-card-overlay" style="background:rgba(27,94,32,.72);">
+          <i class="bi bi-dribbble discipline-card-icon"></i>
+          <div class="discipline-card-title">Fútbol Sala</div>
+          <span class="discipline-card-explore">Explorar <i class="bi bi-arrow-right"></i></span>
+        </div>
+      </a>
+      <!-- Baloncesto -->
+      <a href="{% url 'partidos_view' %}?deporte=baloncesto" class="discipline-card">
+        <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?w=600&q=80&auto=format&fit=crop" alt="Baloncesto">
+        <div class="discipline-card-overlay" style="background:rgba(230,81,0,.72);">
+          <i class="bi bi-bullseye discipline-card-icon"></i>
+          <div class="discipline-card-title">Baloncesto</div>
+          <span class="discipline-card-explore">Explorar <i class="bi bi-arrow-right"></i></span>
+        </div>
+      </a>
+      <!-- Voleibol -->
+      <a href="{% url 'partidos_view' %}?deporte=voleibol" class="discipline-card">
+        <img src="https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=600&q=80&auto=format&fit=crop" alt="Voleibol">
+        <div class="discipline-card-overlay" style="background:rgba(13,71,161,.72);">
+          <i class="bi bi-circle discipline-card-icon"></i>
+          <div class="discipline-card-title">Voleibol</div>
+          <span class="discipline-card-explore">Explorar <i class="bi bi-arrow-right"></i></span>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ══════════ BÚSQUEDA ══════════ -->
+  <form method="GET" action="{% url 'buscar' %}" class="fade-up-1" style="margin-bottom:2.5rem;">
+    <div style="position:relative;max-width:560px;margin:0 auto;">
+      <i class="bi bi-search" style="position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.95rem;"></i>
+      <input type="text" name="q" placeholder="Buscar jugador por nombre o T.I..." class="form-control" style="padding-left:2.5rem;border-radius:50px;font-size:.9rem;">
+    </div>
+  </form>
+
+  <!-- ══════════ PARTIDOS RECIENTES ══════════ -->
+  {% if partidos_recientes %}
+  <div style="margin-bottom:2.5rem;" class="fade-up-2">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem;">
+      <div class="section-title-lg">Partidos <span>Recientes</span></div>
+      <a href="{% url 'partidos_view' %}" class="btn-cosfa btn-cosfa-outline btn-cosfa-sm">Ver todos <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;">
+      {% for p in partidos_recientes %}
+      <a href="{% url 'partido_detalle' p.pk %}" class="partido-btn-card">
+        <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.75rem;flex-wrap:wrap;">
+          <span class="tag tag-blue">{{ p.get_deporte_display }}</span>
+          <span class="tag tag-gray">{{ p.get_fase_display }}</span>
+          {% if p.fecha %}<span class="tag tag-amber">{{ p.fecha|date:"d/m/Y" }}</span>{% endif %}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.5rem;">
+          <div style="text-align:right;">
+            {% if p.equipo_local.grado.bandera %}<img src="{{ p.equipo_local.grado.bandera.url }}" style="height:24px;border-radius:3px;margin-bottom:.2rem;display:block;margin-left:auto;">{% endif %}
+            <div style="font-weight:700;font-size:.84rem;">{{ p.equipo_local.nombre_corto }}</div>
+            <div style="font-size:.68rem;color:var(--muted);">{{ p.equipo_local.pais|default:"" }}</div>
+          </div>
+          <div style="text-align:center;">
+            {% if p.jugado %}
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.7rem;font-weight:700;color:var(--primary);line-height:1;">{{ p.puntos_local }}<span style="color:var(--muted);font-size:1.1rem;margin:0 .1rem;">–</span>{{ p.puntos_visitante }}</div>
+            {% else %}
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;color:var(--muted);font-weight:600;">VS</div>
+            {% if p.hora %}<div style="font-size:.64rem;color:var(--muted);">{{ p.hora }}</div>{% endif %}
+            {% endif %}
+          </div>
+          <div>
+            {% if p.equipo_visitante.grado.bandera %}<img src="{{ p.equipo_visitante.grado.bandera.url }}" style="height:24px;border-radius:3px;margin-bottom:.2rem;display:block;">{% endif %}
+            <div style="font-weight:700;font-size:.84rem;">{{ p.equipo_visitante.nombre_corto }}</div>
+            <div style="font-size:.68rem;color:var(--muted);">{{ p.equipo_visitante.pais|default:"" }}</div>
+          </div>
+        </div>
+        {% if p.deporte == 'futbol' and p.eventos.count > 0 %}
+        <div style="margin-top:.55rem;padding-top:.55rem;border-top:1px solid var(--border);font-size:.68rem;color:var(--muted);">
+          {% for ev in p.eventos.all|slice:":3" %}<i class="bi bi-circle-fill" style="font-size:.4rem;color:var(--primary);"></i> {{ ev.jugador.nombre_completo }}{% if not forloop.last %} · {% endif %}{% endfor %}{% if p.eventos.count > 3 %} +{{ p.eventos.count|add:"-3" }}{% endif %}
+        </div>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ══════════ GRADOS ══════════ -->
+  <div class="cosfa-card fade-up-2" style="margin-bottom:2.5rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem;flex-wrap:wrap;gap:.5rem;">
+      <div class="section-title-lg" style="font-size:1.4rem;">Selecciones por <span>Grado</span></div>
+    </div>
+    <div class="ciclo-tabs">
+      {% for code,name in ciclos %}
+      <button class="ciclo-tab {% if forloop.first %}active{% endif %}" onclick="showCiclo('{{ code }}',this)">{{ name }}</button>
+      {% endfor %}
+    </div>
+    {% for code,name in ciclos %}
+    <div class="ciclo-panel {% if forloop.first %}active{% endif %}" id="ciclo-{{ code }}">
+      <div class="grados-slider-wrap" style="padding:0 22px;">
+        <button class="grados-slider-btn grados-slider-prev" onclick="slideGrados('{{ code }}',-1)"><i class="bi bi-chevron-left"></i></button>
+        <div class="grados-slider" id="gslider-{{ code }}">
+          {% for g in grados %}{% if g.ciclo == code %}
+          <a href="{% url 'vista_grado' g.pk %}" class="grado-card" style="min-width:158px;flex-shrink:0;">
+            {% if g.bandera %}<img src="{{ g.bandera.url }}" class="grado-card-img" alt="{{ g.pais }}">
+            {% else %}<div class="grado-card-img-placeholder"><i class="bi bi-mortarboard-fill" style="font-size:2.5rem;color:rgba(255,255,255,.35);"></i></div>{% endif %}
+            <div class="grado-card-body">
+              <div class="grado-card-nombre">{{ g }}</div>
+              <div class="grado-card-pais"><i class="bi bi-globe2" style="font-size:.65rem;"></i> {{ g.pais|default:"Sin país" }}</div>
+              <span class="grado-card-ciclo">{{ name }}</span>
+            </div>
+          </a>
+          {% endif %}{% endfor %}
+        </div>
+        <button class="grados-slider-btn grados-slider-next" onclick="slideGrados('{{ code }}',1)"><i class="bi bi-chevron-right"></i></button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ══════════ ESTADÍSTICAS ══════════ -->
+  <div class="cosfa-card fade-up-3" style="margin-bottom:2.5rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem;">
+      <div class="section-title-lg" style="font-size:1.4rem;"><span>Estadísticas</span> del Torneo</div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+        <button class="sport-tab-home active" onclick="showSportStats('futbol',this)"><i class="bi bi-dribbble"></i> Fútbol</button>
+        <button class="sport-tab-home" onclick="showSportStats('baloncesto',this)"><i class="bi bi-bullseye"></i> Baloncesto</button>
+        <button class="sport-tab-home" onclick="showSportStats('voleibol',this)"><i class="bi bi-circle"></i> Voleibol</button>
+      </div>
+    </div>
+
+    <div id="stats-futbol">
+      <!-- Ciclo tabs for futbol -->
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.85rem;flex-wrap:wrap;">
+        <span style="font-size:.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Ciclo:</span>
+        <button class="filter-chip active" onclick="showFutCiclo('todos',this)">Todos</button>
+        {% for c,n in ciclos %}<button class="filter-chip" onclick="showFutCiclo('{{ c }}',this)">{{ n }}</button>{% endfor %}
+      </div>
+      <!-- Todos -->
+      <div id="fut-ciclo-todos">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+          <div>
+            <div class="section-label"><i class="bi bi-bullseye" style="color:var(--primary);"></i> Top Goleadores</div>
+            {% for g in top_goles %}<a href="{% url 'perfil_jugador' g.jugador__id %}" class="player-row"><div style="font-weight:700;width:20px;color:var(--muted);font-size:.82rem;text-align:center;">{{ forloop.counter }}</div><div class="player-av">{{ g.jugador__nombre|first }}{{ g.jugador__apellido|first }}</div><div style="flex:1;"><div style="font-size:.83rem;font-weight:600;">{{ g.jugador__nombre }} {{ g.jugador__apellido }}</div><div style="font-size:.7rem;color:var(--muted);">{{ g.jugador__grado__pais|default:"–" }}</div></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;color:var(--primary);font-weight:700;">{{ g.total }}</div></a>
+            {% empty %}<p style="color:var(--muted);font-size:.82rem;text-align:center;padding:1rem;">Sin datos.</p>{% endfor %}
+          </div>
+          <div>
+            <div class="section-label"><i class="bi bi-diagram-3-fill" style="color:var(--accent);"></i> Top Asistentes</div>
+            {% for a in top_asist %}<a href="{% url 'perfil_jugador' a.asistente__id %}" class="player-row"><div style="font-weight:700;width:20px;color:var(--muted);font-size:.82rem;text-align:center;">{{ forloop.counter }}</div><div class="player-av" style="background:linear-gradient(135deg,var(--warning),var(--primary));">{{ a.asistente__nombre|first }}{{ a.asistente__apellido|first }}</div><div style="flex:1;"><div style="font-size:.83rem;font-weight:600;">{{ a.asistente__nombre }} {{ a.asistente__apellido }}</div><div style="font-size:.7rem;color:var(--muted);">{{ a.asistente__grado__pais|default:"–" }}</div></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;color:var(--warning);font-weight:700;">{{ a.total }}</div></a>
+            {% empty %}<p style="color:var(--muted);font-size:.82rem;text-align:center;padding:1rem;">Sin datos.</p>{% endfor %}
+          </div>
+        </div>
+      </div>
+      <!-- Por ciclo -->
+      {% for c,n in ciclos %}
+      <div id="fut-ciclo-{{ c }}" style="display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+          <div>
+            <div class="section-label"><i class="bi bi-bullseye" style="color:var(--primary);"></i> Top Goleadores – {{ n }}</div>
+            {% with glist=top_goles_ciclos|get_item:c %}{% for g in glist %}<a href="{% url 'perfil_jugador' g.jugador__id %}" class="player-row"><div style="font-weight:700;width:20px;color:var(--muted);font-size:.82rem;text-align:center;">{{ forloop.counter }}</div><div class="player-av">{{ g.jugador__nombre|first }}{{ g.jugador__apellido|first }}</div><div style="flex:1;"><div style="font-size:.83rem;font-weight:600;">{{ g.jugador__nombre }} {{ g.jugador__apellido }}</div><div style="font-size:.7rem;color:var(--muted);">{{ g.jugador__grado__pais|default:"–" }}</div></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;color:var(--primary);font-weight:700;">{{ g.total }}</div></a>{% empty %}<p style="color:var(--muted);font-size:.82rem;text-align:center;padding:1rem;">Sin datos en {{ n }}.</p>{% endfor %}{% endwith %}
+          </div>
+          <div>
+            <div class="section-label"><i class="bi bi-diagram-3-fill" style="color:var(--accent);"></i> Top Asistentes – {{ n }}</div>
+            {% with alist=top_asist_ciclos|get_item:c %}{% for a in alist %}<a href="{% url 'perfil_jugador' a.asistente__id %}" class="player-row"><div style="font-weight:700;width:20px;color:var(--muted);font-size:.82rem;text-align:center;">{{ forloop.counter }}</div><div class="player-av" style="background:linear-gradient(135deg,var(--warning),var(--primary));">{{ a.asistente__nombre|first }}{{ a.asistente__apellido|first }}</div><div style="flex:1;"><div style="font-size:.83rem;font-weight:600;">{{ a.asistente__nombre }} {{ a.asistente__apellido }}</div><div style="font-size:.7rem;color:var(--muted);">{{ a.asistente__grado__pais|default:"–" }}</div></div><div style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;color:var(--warning);font-weight:700;">{{ a.total }}</div></a>{% empty %}<p style="color:var(--muted);font-size:.82rem;text-align:center;padding:1rem;">Sin datos en {{ n }}.</p>{% endfor %}{% endwith %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div id="stats-baloncesto" class="hidden">
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.85rem;flex-wrap:wrap;">
+        <span style="font-size:.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Ciclo:</span>
+        {% for c,n in ciclos %}<a href="{% url 'estadisticas' %}?deporte=baloncesto&ciclo={{ c }}" class="filter-chip">{{ n }}</a>{% endfor %}
+        <a href="{% url 'estadisticas' %}?deporte=baloncesto" class="filter-chip active">Todos</a>
+      </div>
+      {% if stats_basket %}
+      <div style="overflow-x:auto;"><table class="cosfa-table"><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>PG</th><th>PP</th><th>PF</th><th>PC</th></tr></thead><tbody>{% for s in stats_basket %}<tr><td style="font-weight:700;text-align:center;">{{ forloop.counter }}</td><td><a href="{% url 'vista_grado' s.equipo.grado.pk %}" style="color:var(--primary);font-weight:600;text-decoration:none;">{{ s.equipo.nombre_corto }}</a></td><td>{{ s.pj }}</td><td><span class="tag tag-green">{{ s.pg }}</span></td><td><span class="tag tag-red">{{ s.pp }}</span></td><td style="font-weight:600;">{{ s.pf }}</td><td style="color:var(--muted);">{{ s.pc }}</td></tr>{% endfor %}</tbody></table></div>
+      {% else %}<p style="color:var(--muted);text-align:center;padding:2rem;font-size:.85rem;">Sin partidos de baloncesto aún.</p>{% endif %}
+    </div>
+
+    <div id="stats-voleibol" class="hidden">
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.85rem;flex-wrap:wrap;">
+        <span style="font-size:.7rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Ciclo:</span>
+        {% for c,n in ciclos %}<a href="{% url 'estadisticas' %}?deporte=voleibol&ciclo={{ c }}" class="filter-chip">{{ n }}</a>{% endfor %}
+        <a href="{% url 'estadisticas' %}?deporte=voleibol" class="filter-chip active">Todos</a>
+      </div>
+      {% if stats_voley %}
+      <div style="overflow-x:auto;"><table class="cosfa-table"><thead><tr><th>#</th><th>Equipo</th><th>PJ</th><th>PG</th><th>PP</th><th>Sets F</th><th>Sets C</th></tr></thead><tbody>{% for s in stats_voley %}<tr><td style="font-weight:700;text-align:center;">{{ forloop.counter }}</td><td><a href="{% url 'vista_grado' s.equipo.grado.pk %}" style="color:var(--primary);font-weight:600;text-decoration:none;">{{ s.equipo.nombre_corto }}</a></td><td>{{ s.pj }}</td><td><span class="tag tag-green">{{ s.pg }}</span></td><td><span class="tag tag-red">{{ s.pp }}</span></td><td style="font-weight:600;">{{ s.pf }}</td><td style="color:var(--muted);">{{ s.pc }}</td></tr>{% endfor %}</tbody></table></div>
+      {% else %}<p style="color:var(--muted);text-align:center;padding:2rem;font-size:.85rem;">Sin partidos de voleibol aún.</p>{% endif %}
+    </div>
+  </div>
+
+  <!-- ══════════ HISTORIAL ══════════ -->
+  {% if historial %}
+  <div style="margin-bottom:2rem;" class="fade-up-3">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.5rem;">
+      <div class="section-title-lg" style="font-size:1.4rem;">Torneos <span>Anteriores</span></div>
+      <a href="{% url 'historial_torneos' %}" class="btn-cosfa btn-cosfa-outline btn-cosfa-sm">Ver historial <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div style="display:flex;gap:.85rem;flex-wrap:wrap;">
+      {% for t in historial %}
+      <div style="background:var(--card);border:1.5px solid var(--border);border-radius:var(--r2);padding:.75rem 1.1rem;min-width:150px;transition:var(--t);" onmouseover="this.style.borderColor='var(--primary-light)';this.style.background='var(--primary-bg)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--card)'">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;color:var(--primary);">{{ t.nombre }} {{ t.año }}</div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:.15rem;"><i class="bi bi-archive"></i> Torneo cerrado</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Carrusel ── */
+let cur=0;
+const inner=document.getElementById('carouselInner');
+const dots=document.querySelectorAll('.cdot');
+const total=dots.length;
+function cGo(n){cur=(n+total)%total;if(inner)inner.style.transform=`translateX(-${cur*100}%)`;dots.forEach((d,i)=>{d.style.width=i===cur?'18px':'7px';d.style.background=i===cur?'#fff':'rgba(255,255,255,.45)';});}
+function cMove(d){cGo(cur+d);}
+if(total>1)setInterval(()=>cMove(1),5500);
+
+/* ── Ciclo tabs ── */
+function showCiclo(code,btn){
+  document.querySelectorAll('.ciclo-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ciclo-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('ciclo-'+code)?.classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ── Fútbol ciclo tabs ── */
+function showFutCiclo(code,btn){
+  document.querySelectorAll('[id^="fut-ciclo-"]').forEach(p=>p.style.display='none');
+  var panel=document.getElementById('fut-ciclo-'+code);
+  if(panel)panel.style.display='';
+  btn.closest('#stats-futbol').querySelectorAll('.filter-chip').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+/* ── Sport stats tabs ── */
+function showSportStats(sport,btn){
+  ['futbol','baloncesto','voleibol'].forEach(s=>{
+    const el=document.getElementById('stats-'+s);
+    if(el)el.classList.toggle('hidden',s!==sport);
+  });
+  document.querySelectorAll('.sport-tab-home').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+/* ── Grado slider ── */
+function slideGrados(code,dir){
+  const sl=document.getElementById('gslider-'+code);
+  if(sl)sl.scrollLeft+=dir*220;
+}
+</script>
+{% endblock %}

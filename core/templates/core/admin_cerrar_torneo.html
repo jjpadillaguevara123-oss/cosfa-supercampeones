@@ -1,0 +1,58 @@
+{% extends 'core/base.html' %}
+{% block title %}Cerrar Torneo – Admin{% endblock %}
+{% block content %}
+<div class="admin-wrap">
+  {% include 'core/partials/sidebar.html' with active='cerrar' %}
+  <div class="admin-content">
+    <div class="page-header fade-up">
+      <div class="page-title">Cerrar <span>Torneo</span></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:start;" class="fade-up">
+      <div class="cosfa-card">
+        <div class="cosfa-card-title">🏆 Guardar Resumen del Torneo</div>
+        <p style="font-size:.85rem;color:var(--muted);line-height:1.7;margin-bottom:1.25rem;">
+          Al cerrar el torneo, el sistema guardará automáticamente:
+          <br>• Campeones por cada categoría (deporte/ciclo/género)
+          <br>• Segundo y tercer puesto
+          <br>• Máximo goleador de fútbol
+          <br>• El historial quedará visible para todos los usuarios
+        </p>
+        <form method="POST">
+          {% csrf_token %}
+          <div class="mb-3"><label class="form-label">Nombre del Torneo</label>
+            <input type="text" name="nombre" class="form-control" value="Torneo Escolar COSFA" required>
+          </div>
+          <div class="mb-3"><label class="form-label">Año</label>
+            <input type="number" name="año" class="form-control" value="{{ now.year }}" required>
+          </div>
+          <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+            <button type="submit" name="guardar_resumen" class="btn-cosfa btn-cosfa-primary">
+              <i class="bi bi-archive"></i> Solo Guardar Resumen
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="cosfa-card" style="border-color:#fecaca;">
+        <div class="cosfa-card-title" style="color:#e02424;">⚠️ Resetear para Nuevo Torneo</div>
+        <p style="font-size:.85rem;color:var(--muted);line-height:1.7;margin-bottom:1.25rem;">
+          Esta opción <strong style="color:#e02424;">borra todos los partidos, grupos, goles y asistencias</strong> del torneo actual pero <strong>conserva jugadores y grados</strong>. 
+          Los jugadores ya no estarán inscritos en ningún equipo.
+          <br><br>Úsalo solo al iniciar un nuevo año escolar.
+        </p>
+        <form method="POST" onsubmit="return confirm('¿Estás seguro? Esta acción no se puede deshacer. Se eliminarán todos los partidos y estadísticas.')">
+          {% csrf_token %}
+          <div class="mb-3"><label class="form-label">Nombre del Torneo</label>
+            <input type="text" name="nombre" class="form-control" value="Torneo Escolar COSFA" required>
+          </div>
+          <div class="mb-3"><label class="form-label">Año</label>
+            <input type="number" name="año" class="form-control" value="{{ now.year }}" required>
+          </div>
+          <button type="submit" name="reset_completo" class="btn-cosfa btn-cosfa-danger">
+            <i class="bi bi-arrow-clockwise"></i> Guardar y Resetear para Nuevo Torneo
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'core/base.html' %}
+{% block title %}Reglas – Admin{% endblock %}
+{% block content %}
+<div class="admin-wrap">
+  {% include 'core/partials/sidebar.html' with active='reglas' %}
+  <div class="admin-content">
+    <div class="page-header">
+      <div class="page-title">{% if obj %}Editar{% else %}Agregar{% endif %} <span>Reglas</span></div>
+      <a href="{% url 'admin_reglas' %}" class="btn-cosfa btn-cosfa-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+    </div>
+    <div class="cosfa-card fade-up" style="max-width:680px;">
+      <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3"><label class="form-label">Deporte</label>{{ form.deporte }}</div>
+        <div class="mb-3"><label class="form-label">Descripción / Reglamento (texto)</label>{{ form.descripcion }}</div>
+        <div class="mb-3">
+          <label class="form-label">Documento (PDF o Word)</label>
+          {{ form.documento }}
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.3rem;">Puedes subir el reglamento completo en PDF o Word. Si hay texto Y documento, se muestran ambos.</div>
+          {% if obj.documento %}<div style="margin-top:.5rem;font-size:.78rem;color:var(--primary);"><i class="bi bi-file-earmark"></i> Archivo actual: <a href="{{ obj.documento.url }}" target="_blank">{{ obj.documento.name }}</a></div>{% endif %}
+        </div>
+        <div style="display:flex;gap:.5rem;">
+          <button type="submit" class="btn-cosfa btn-cosfa-primary"><i class="bi bi-check-lg"></i> Guardar</button>
+          <a href="{% url 'admin_reglas' %}" class="btn-cosfa btn-cosfa-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

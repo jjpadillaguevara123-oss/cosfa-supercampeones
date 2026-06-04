@@ -1,0 +1,565 @@
+{% extends 'core/base.html' %}
+{% block title %}Selección de Países – Admin{% endblock %}
+{% block extra_css %}
+<style>
+/* ── Ruleta ── */
+#rouletteCanvas{border-radius:50%;box-shadow:0 4px 24px rgba(13,71,161,.18);}
+.spin-btn{
+  background:var(--primary);color:#fff;border:none;padding:.55rem 1.8rem;
+  border-radius:50px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;
+  font-size:1.1rem;letter-spacing:2px;margin-top:.75rem;transition:all .2s;
+  box-shadow:0 4px 12px rgba(13,71,161,.3);
+}
+.spin-btn:hover{background:var(--primary-dark,var(--primary-dark));transform:scale(1.04);}
+.spin-btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+.arrow-ptr{
+  position:absolute;top:-6px;left:50%;transform:translateX(-50%);
+  width:0;height:0;border-left:9px solid transparent;
+  border-right:9px solid transparent;border-top:24px solid var(--primary,var(--primary));z-index:10;
+}
+/* ── Filas grado ── */
+.grado-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.45rem .6rem;border-radius:7px;margin-bottom:.25rem;
+  font-size:.82rem;transition:background .2s;
+}
+.grado-row.asignado{background:#f0fdf4;border:1px solid #bfdbfe;}
+.grado-row.activo{background:var(--primary-bg);border:1px solid #bfdbfe;}
+.grado-row.pendiente{background:var(--bg,var(--bg));border:1px solid var(--border,var(--border));}
+body.dark-mode .grado-row.asignado{background:#1a2e1a!important;border-color:#2a5a2a!important;}
+body.dark-mode .grado-row.activo{background:#1c2a3e!important;border-color:#1d4ed8!important;}
+body.dark-mode .grado-row.pendiente{background:#161b22!important;border-color:#30363d!important;}
+/* ── Log ── */
+#log-paises{max-height:180px;overflow-y:auto;}
+.log-pais{padding:.3rem .5rem;border-radius:5px;margin-bottom:.2rem;font-size:.76rem;background:var(--primary-light,var(--primary-bg));color:var(--primary,var(--primary));}
+/* ── Chips países ── */
+.pais-chip{
+  display:inline-flex;align-items:center;gap:.3rem;
+  padding:.2rem .55rem .2rem .7rem;border-radius:20px;
+  background:var(--primary-light,var(--primary-bg));color:var(--primary,var(--primary));
+  font-size:.78rem;font-weight:600;border:1px solid #bfdbfe;margin:.2rem;
+}
+body.dark-mode .pais-chip{background:#1c2a3e!important;border-color:#1d4ed8!important;color:#58a6ff!important;}
+.pais-chip button{background:none;border:none;cursor:pointer;color:inherit;font-size:.8rem;padding:0;line-height:1;opacity:.6;}
+.pais-chip button:hover{opacity:1;color:#e02424;}
+#paisInput{flex:1;min-width:140px;}
+/* ── Asignación manual ── */
+#manual-section select{font-size:.85rem;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrap">
+  {% include 'core/partials/sidebar.html' with active='paises' %}
+  <div class="admin-content">
+
+    <div class="page-header">
+      <div class="page-title">🌍 Selección de <span>Países</span></div>
+      <a href="{% url 'admin_grados' %}" class="btn-cosfa btn-cosfa-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
+    </div>
+
+    {% if messages %}{% for m in messages %}
+    <div class="cosfa-alert {% if 'success' in m.tags %}alert-ok{% else %}alert-err{% endif %}">{{ m }}</div>
+    {% endfor %}{% endif %}
+
+    <!-- ═══ FILA 1: Gestión de lista de países ══════════════════════════════ -->
+    <div class="cosfa-card fade-up" style="margin-bottom:1.25rem;">
+      <div class="cosfa-card-title">
+        <i class="bi bi-globe2" style="color:var(--primary,var(--primary));"></i> Países participantes
+        <span id="contador-paises" style="font-size:.72rem;font-weight:400;color:var(--muted,var(--muted));margin-left:.5rem;"></span>
+      </div>
+      <p style="font-size:.78rem;color:var(--muted,var(--muted));margin-bottom:.75rem;">
+        Agrega o quita países de la lista activa. Solo estos participarán en el sorteo.
+      </p>
+      <div id="paises-chips" style="margin-bottom:.75rem;min-height:36px;"></div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
+        <input id="paisInput" class="form-control" type="text" placeholder="Escribir país y presionar Agregar..."
+               style="max-width:260px;" onkeydown="if(event.key==='Enter'){event.preventDefault();agregarPais();}">
+        <button class="btn-cosfa btn-cosfa-primary btn-cosfa-sm" onclick="agregarPais()">
+          <i class="bi bi-plus-lg"></i> Agregar
+        </button>
+        <button class="btn-cosfa btn-cosfa-secondary btn-cosfa-sm" onclick="cargarPaisesDefault()" title="Restaurar lista por defecto">
+          <i class="bi bi-arrow-counterclockwise"></i> Restaurar defecto
+        </button>
+        <button class="btn-cosfa btn-cosfa-outline btn-cosfa-sm" onclick="guardarPaisesConfig()" id="btnGuardarPaises">
+          <i class="bi bi-floppy"></i> Guardar lista
+        </button>
+      </div>
+      <div id="paises-msg" style="margin-top:.5rem;font-size:.75rem;"></div>
+    </div>
+
+    <!-- ═══ FILA 2: Asignación Manual por grado ═════════════════════════════ -->
+    <div class="cosfa-card fade-up-1" id="manual-section" style="margin-bottom:1.25rem;">
+      <div class="cosfa-card-title">✏️ Asignación Manual por Grado</div>
+      <p style="font-size:.78rem;color:var(--muted,var(--muted));margin-bottom:.9rem;">
+        Selecciona un grado y asígnale directamente un país de la lista activa.
+      </p>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:flex-end;">
+        <div style="flex:1;min-width:180px;">
+          <label class="form-label">Grado</label>
+          <select id="manual-grado" class="form-select">
+            <option value="">— Seleccionar grado —</option>
+            {% for g in grados %}
+            <option value="{{ g.pk }}" data-pais="{{ g.pais|default:'' }}">
+              {{ g }}{% if g.pais %} → {{ g.pais }}{% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div style="flex:1;min-width:180px;">
+          <label class="form-label">País</label>
+          <select id="manual-pais" class="form-select">
+            <option value="">— Seleccionar país —</option>
+          </select>
+        </div>
+        <button class="btn-cosfa btn-cosfa-primary" onclick="asignarManual()">
+          <i class="bi bi-check-lg"></i> Asignar
+        </button>
+        <button class="btn-cosfa btn-cosfa-secondary btn-cosfa-sm" onclick="limpiarAsignacionManual()" title="Quitar país del grado seleccionado">
+          <i class="bi bi-x-lg"></i> Limpiar
+        </button>
+      </div>
+      <div id="manual-msg" style="margin-top:.6rem;font-size:.78rem;"></div>
+    </div>
+
+    <!-- ═══ FILA 3: Ruleta + Estado ══════════════════════════════════════════ -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:start;">
+
+      <!-- RULETA -->
+      <div class="cosfa-card fade-up-2">
+        <div class="cosfa-card-title">🎡 Ruleta — Sorteo Automático por Grado</div>
+        <p style="font-size:.78rem;color:var(--muted,var(--muted));margin-bottom:.75rem;">
+          Sortea grado por grado en orden (T→1→2→…→11→P). No repite países dentro del mismo ciclo (primaria/secundaria independientes).
+        </p>
+
+        <!-- Grado actual -->
+        <div id="grado-actual-box" style="background:var(--primary-light,var(--primary-bg));border:1px solid #bfdbfe;border-radius:8px;padding:.75rem 1rem;margin-bottom:.9rem;text-align:center;">
+          <div style="font-size:.7rem;color:var(--primary,var(--primary));text-transform:uppercase;letter-spacing:.5px;margin-bottom:.2rem;font-weight:700;">Sorteando para</div>
+          <div id="grado-actual-nombre" style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;color:var(--primary,var(--primary));letter-spacing:1px;">—</div>
+          <div id="grado-actual-ciclo" style="font-size:.7rem;color:var(--muted,var(--muted));margin-top:.1rem;"></div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;">
+          <div style="position:relative;">
+            <div class="arrow-ptr"></div>
+            <canvas id="rouletteCanvas" width="280" height="280"></canvas>
+          </div>
+          <button id="spinBtn" class="spin-btn" onclick="spinPais()">🌍 SORTEAR PAÍS</button>
+          <div id="spin-result" style="margin-top:.6rem;font-size:1rem;font-weight:700;color:var(--primary,var(--primary));text-align:center;min-height:24px;"></div>
+          <div id="spin-status" style="font-size:.76rem;color:var(--muted,var(--muted));text-align:center;margin-top:.2rem;"></div>
+        </div>
+
+        <div style="margin-top:1rem;">
+          <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted,var(--muted));margin-bottom:.4rem;">Asignaciones de esta sesión</div>
+          <div id="log-paises"></div>
+        </div>
+
+        <div style="display:flex;gap:.5rem;margin-top:.9rem;flex-wrap:wrap;">
+          <button id="confirmarPaisBtn" class="btn-cosfa btn-cosfa-primary" onclick="confirmarPaises()" disabled
+                  style="flex:1;justify-content:center;opacity:.4;">
+            <i class="bi bi-check-all"></i> Guardar Asignaciones de Ruleta
+          </button>
+          <button onclick="reiniciarSorteo()" class="btn-cosfa btn-cosfa-secondary btn-cosfa-sm">
+            <i class="bi bi-arrow-counterclockwise"></i> Reiniciar
+          </button>
+        </div>
+
+        <hr style="border-color:var(--border,var(--border));margin:1rem 0;">
+        <p style="font-size:.75rem;color:var(--muted,var(--muted));margin-bottom:.5rem;">O asigna automáticamente a todos sin animación:</p>
+        <form method="POST">
+          {% csrf_token %}
+          <button type="submit" name="asignar_todos" class="btn-cosfa btn-cosfa-outline btn-cosfa-sm" style="width:100%;justify-content:center;">
+            <i class="bi bi-globe2"></i> Asignar Automáticamente a Todos
+          </button>
+        </form>
+      </div>
+
+      <!-- ESTADO DE GRADOS -->
+      <div class="cosfa-card fade-up-3">
+        <div class="cosfa-card-title">
+          Estado de Asignación
+          <span style="font-weight:400;font-size:.75rem;color:var(--muted,var(--muted));"> · {{ grados.count }} grados</span>
+        </div>
+        <div style="max-height:580px;overflow-y:auto;" id="grados-lista">
+          {% for g in grados %}
+          <div class="grado-row {% if g.pais %}asignado{% else %}pendiente{% endif %}" id="grado-row-{{ g.pk }}">
+            <div style="display:flex;align-items:center;gap:.5rem;">
+              <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;
+                background:{% if g.pais %}var(--primary-dark){% else %}#d1d5db{% endif %};"
+                id="dot-{{ g.pk }}"></div>
+              <span style="font-weight:700;">{{ g }}</span>
+              <span style="font-size:.68rem;background:var(--primary-light,var(--primary-bg));color:var(--primary,var(--primary));padding:1px 6px;border-radius:10px;">
+                Ciclo {{ g.ciclo }}
+              </span>
+            </div>
+            <div style="font-size:.8rem;font-weight:600;" id="pais-{{ g.pk }}">
+              {% if g.pais %}
+                <span style="color:var(--primary-dark);">{{ g.pais }}</span>
+              {% else %}
+                <span style="color:var(--muted,#d1d5db);font-weight:400;">Pendiente</span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF             = "{{ csrf_token }}";
+const ASIGNAR_URL      = "{% url 'sorteo_paises' %}";
+const GUARDAR_PAISES_URL = "{% url 'guardar_paises_config' %}";
+
+// Datos del servidor
+const todosGrados   = {{ grados_json|safe }};
+let   PAISES        = {{ paises_json|safe }};
+const PAISES_DEFAULT = {{ paises_default_json|safe }};
+
+// ════════════════════════════════════════════
+// GESTIÓN DE LISTA DE PAÍSES
+// ════════════════════════════════════════════
+function renderChips() {
+  const cont = document.getElementById('paises-chips');
+  cont.innerHTML = '';
+  PAISES.forEach((p, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'pais-chip';
+    chip.innerHTML = p + ' <button onclick="quitarPais(' + i + ')" title="Quitar">✕</button>';
+    cont.appendChild(chip);
+  });
+  document.getElementById('contador-paises').textContent = '(' + PAISES.length + ' países)';
+  // Actualizar select de asignación manual
+  poblarSelectPais();
+  // Redibujar ruleta si hay grado activo
+  if (pendientesGrados.length > 0) {
+    const next = pendientesGrados[0];
+    drawWheel(getPaisesDisponibles(next.grado_code));
+  }
+}
+
+function agregarPais() {
+  const inp = document.getElementById('paisInput');
+  const val = inp.value.trim();
+  if (!val) return;
+  if (PAISES.includes(val)) { mostrarMsg('paises-msg', 'Ya está en la lista.', 'amber'); return; }
+  PAISES.push(val);
+  inp.value = '';
+  renderChips();
+  mostrarMsg('paises-msg', 'País agregado. Recuerda guardar la lista.', 'ok');
+}
+
+function quitarPais(idx) {
+  PAISES.splice(idx, 1);
+  renderChips();
+  mostrarMsg('paises-msg', 'País eliminado. Recuerda guardar la lista.', 'amber');
+}
+
+function cargarPaisesDefault() {
+  if (!confirm('¿Restaurar la lista de países por defecto?')) return;
+  PAISES = [...PAISES_DEFAULT];
+  renderChips();
+  mostrarMsg('paises-msg', 'Lista restaurada. Recuerda guardar.', 'ok');
+}
+
+async function guardarPaisesConfig() {
+  const btn = document.getElementById('btnGuardarPaises');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass"></i> Guardando...';
+  try {
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', CSRF);
+    fd.append('paises_lista', PAISES.join('\n'));
+    const res  = await fetch(GUARDAR_PAISES_URL, {method: 'POST', body: fd});
+    const data = await res.json();
+    mostrarMsg('paises-msg', data.ok ? '✅ Lista guardada correctamente.' : '❌ Error al guardar.', data.ok ? 'ok' : 'err');
+  } catch(e) {
+    mostrarMsg('paises-msg', '❌ Error de conexión.', 'err');
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-floppy"></i> Guardar lista';
+}
+
+// ════════════════════════════════════════════
+// ASIGNACIÓN MANUAL
+// ════════════════════════════════════════════
+function poblarSelectPais() {
+  const sel = document.getElementById('manual-pais');
+  const val = sel.value; // conservar selección
+  sel.innerHTML = '<option value="">— Seleccionar país —</option>';
+  PAISES.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p; opt.textContent = p;
+    if (p === val) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+async function asignarManual() {
+  const gradoId = document.getElementById('manual-grado').value;
+  const pais    = document.getElementById('manual-pais').value;
+  if (!gradoId || !pais) {
+    mostrarMsg('manual-msg', 'Selecciona grado y país.', 'amber'); return;
+  }
+  const fd = new FormData();
+  fd.append('csrfmiddlewaretoken', CSRF);
+  fd.append('grado_id', gradoId);
+  fd.append('pais', pais);
+  const res = await fetch(ASIGNAR_URL, {method:'POST', body: fd});
+  if (res.ok) {
+    // Actualizar UI
+    const opt = document.querySelector(`#manual-grado option[value="${gradoId}"]`);
+    if (opt) { opt.textContent = opt.textContent.split(' → ')[0] + ' → ' + pais; opt.dataset.pais = pais; }
+    const row = document.getElementById('grado-row-' + gradoId);
+    if (row) { row.className = 'grado-row asignado'; }
+    const dot = document.getElementById('dot-' + gradoId);
+    if (dot) { dot.style.background = 'var(--primary-dark)'; }
+    const paisEl = document.getElementById('pais-' + gradoId);
+    if (paisEl) { paisEl.innerHTML = '<span style="color:var(--primary-dark);font-weight:700;">' + pais + '</span>'; }
+    mostrarMsg('manual-msg', '✅ País asignado correctamente.', 'ok');
+    // Quitar de pendientes si estaba
+    pendientesGrados = pendientesGrados.filter(g => String(g.id) !== String(gradoId));
+    updateGradoActual();
+  } else {
+    mostrarMsg('manual-msg', '❌ Error al guardar. Recarga e intenta de nuevo.', 'err');
+  }
+}
+
+async function limpiarAsignacionManual() {
+  const gradoId = document.getElementById('manual-grado').value;
+  if (!gradoId) { mostrarMsg('manual-msg', 'Selecciona un grado primero.', 'amber'); return; }
+  if (!confirm('¿Quitar el país asignado a este grado?')) return;
+  const fd = new FormData();
+  fd.append('csrfmiddlewaretoken', CSRF);
+  fd.append('grado_id', gradoId);
+  fd.append('pais', '');
+  const res = await fetch(ASIGNAR_URL, {method:'POST', body: fd});
+  if (res.ok) {
+    const opt = document.querySelector(`#manual-grado option[value="${gradoId}"]`);
+    if (opt) { opt.textContent = opt.textContent.split(' → ')[0]; opt.dataset.pais = ''; }
+    const row = document.getElementById('grado-row-' + gradoId);
+    if (row) { row.className = 'grado-row pendiente'; }
+    const dot = document.getElementById('dot-' + gradoId);
+    if (dot) { dot.style.background = '#d1d5db'; }
+    const paisEl = document.getElementById('pais-' + gradoId);
+    if (paisEl) { paisEl.innerHTML = '<span style="color:var(--muted,#d1d5db);font-weight:400;">Pendiente</span>'; }
+    mostrarMsg('manual-msg', '🔄 País eliminado del grado.', 'ok');
+    // Reañadir a pendientes si no está
+    const gradoData = todosGrados.find(g => String(g.id) === String(gradoId));
+    if (gradoData && !pendientesGrados.find(g => String(g.id) === String(gradoId))) {
+      pendientesGrados.push(gradoData);
+      pendientesGrados.sort((a,b) => ordenGrado(a) - ordenGrado(b));
+    }
+    updateGradoActual();
+  }
+}
+
+// ════════════════════════════════════════════
+// RULETA
+// ════════════════════════════════════════════
+const ORDEN_GRADO = ['T','1','2','3','4','5','6','7','8','9','10','11','P'];
+function ordenGrado(g) {
+  const idx = ORDEN_GRADO.indexOf(g.grado_code);
+  return idx === -1 ? 99 : idx;
+}
+const gradosOrdenados = [...todosGrados].sort((a,b) => {
+  const oa = ordenGrado(a), ob = ordenGrado(b);
+  if (oa !== ob) return oa - ob;
+  return a.nombre.localeCompare(b.nombre);
+});
+
+// Solo los que aún no tienen país asignado
+let pendientesGrados  = gradosOrdenados.filter(g => !g.pais);
+let asignaciones      = {};
+let usadosPrimaria    = [];
+let usadosSecundaria  = [];
+
+const PRIM_CODES = ['T','1','2','3','4','5'];
+
+function getPaisesDisponibles(gradoCode) {
+  const esPrim = PRIM_CODES.includes(gradoCode);
+  const usados  = esPrim ? usadosPrimaria : usadosSecundaria;
+  const disp    = PAISES.filter(p => !usados.includes(p));
+  return disp.length ? disp : [...PAISES]; // si se agotan, repetir toda la lista
+}
+
+const canvas = document.getElementById('rouletteCanvas');
+const ctx    = canvas.getContext('2d');
+const W=canvas.width, H=canvas.height, CX=W/2, CY=H/2, R=W/2-8;
+let angle=0, spinning=false;
+
+const COLORS=['var(--primary)','#e02424','var(--primary-dark)','var(--warning)','var(--primary)',
+              '#0e9f6e','#c27803','#6366f1','#db2777','#0284c7','#0891b2','#65a30d'];
+
+function drawWheel(items) {
+  ctx.clearRect(0,0,W,H);
+  if (!items.length) {
+    ctx.fillStyle='var(--bg)'; ctx.beginPath(); ctx.arc(CX,CY,R,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='var(--muted)'; ctx.textAlign='center'; ctx.font='12px Inter';
+    ctx.fillText('Sin países disponibles',CX,CY); return;
+  }
+  const sl=(2*Math.PI)/items.length;
+  for (let i=0; i<items.length; i++) {
+    const s=angle+i*sl, e=s+sl;
+    ctx.beginPath(); ctx.moveTo(CX,CY); ctx.arc(CX,CY,R,s,e); ctx.closePath();
+    ctx.fillStyle=COLORS[i%COLORS.length]; ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.2)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.save(); ctx.translate(CX,CY); ctx.rotate(s+sl/2);
+    ctx.textAlign='right'; ctx.fillStyle='#fff';
+    const fs=Math.min(11,200/items.length+4);
+    ctx.font=`600 ${fs}px Inter`;
+    ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=2;
+    const lbl=items[i].length>11?items[i].slice(0,10)+'…':items[i];
+    ctx.fillText(lbl,R-10,4); ctx.restore();
+  }
+  ctx.beginPath(); ctx.arc(CX,CY,20,0,Math.PI*2);
+  ctx.fillStyle='#fff'; ctx.fill();
+  ctx.strokeStyle='var(--border)'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.fillStyle='var(--primary)'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.shadowBlur=0; ctx.font='12px Inter'; ctx.fillText('🌍',CX,CY);
+}
+
+function updateGradoActual() {
+  const box    = document.getElementById('grado-actual-nombre');
+  const cicloEl= document.getElementById('grado-actual-ciclo');
+  const status = document.getElementById('spin-status');
+
+  if (pendientesGrados.length === 0) {
+    box.textContent    = '✅ Completado';
+    cicloEl.textContent= 'Todos los grados tienen país';
+    status.textContent = '';
+    document.getElementById('spinBtn').disabled = true;
+    const btn = document.getElementById('confirmarPaisBtn');
+    btn.disabled = Object.keys(asignaciones).length === 0;
+    btn.style.opacity = btn.disabled ? '.4' : '1';
+    drawWheel([]);
+    return;
+  }
+
+  const next = pendientesGrados[0];
+  box.textContent    = next.nombre;
+  cicloEl.textContent= 'Ciclo ' + next.ciclo;
+  const disp = getPaisesDisponibles(next.grado_code);
+  drawWheel(disp);
+
+  // Marcar fila activa
+  document.querySelectorAll('.grado-row').forEach(r => r.classList.remove('activo'));
+  const rowActiva = document.getElementById('grado-row-' + next.id);
+  if (rowActiva) {
+    rowActiva.classList.add('activo');
+    rowActiva.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+
+  status.textContent = disp.length + ' países disponibles · ' + pendientesGrados.length + ' grado(s) restante(s)';
+}
+
+function spinPais() {
+  if (spinning || pendientesGrados.length === 0) return;
+  const gradoActual = pendientesGrados[0];
+  const paisesDisp  = getPaisesDisponibles(gradoActual.grado_code);
+  if (!paisesDisp.length) { alert('Sin países disponibles en la lista.'); return; }
+
+  spinning = true;
+  document.getElementById('spinBtn').disabled = true;
+  document.getElementById('spin-result').textContent = '';
+
+  const extra = 1800 + Math.random()*2200;
+  const dur   = 2800 + Math.random()*1200;
+  const t0=performance.now(), a0=angle;
+
+  function frame(now) {
+    const p=Math.min((now-t0)/dur, 1), ease=1-Math.pow(1-p, 4);
+    angle = a0 + extra*ease;
+    drawWheel(paisesDisp);
+    if (p < 1) { requestAnimationFrame(frame); return; }
+
+    const sl=(2*Math.PI)/paisesDisp.length;
+    const norm=(((-angle%(2*Math.PI))+2*Math.PI)%(2*Math.PI));
+    const idx=Math.floor(norm/sl)%paisesDisp.length;
+    const paisElegido = paisesDisp[idx];
+
+    // Registrar
+    asignaciones[gradoActual.id] = paisElegido;
+    const esPrim = PRIM_CODES.includes(gradoActual.grado_code);
+    (esPrim ? usadosPrimaria : usadosSecundaria).push(paisElegido);
+
+    // UI fila
+    const row = document.getElementById('grado-row-' + gradoActual.id);
+    if (row) { row.className='grado-row asignado'; }
+    const dot = document.getElementById('dot-' + gradoActual.id);
+    if (dot) { dot.style.background='var(--primary-dark)'; }
+    const paisEl = document.getElementById('pais-' + gradoActual.id);
+    if (paisEl) { paisEl.innerHTML='<span style="color:var(--primary-dark);font-weight:700;">'+paisElegido+'</span>'; }
+
+    // Log
+    const log  = document.getElementById('log-paises');
+    const item = document.createElement('div');
+    item.className = 'log-pais';
+    item.innerHTML = '<strong>' + gradoActual.nombre + '</strong> → ' + paisElegido;
+    log.prepend(item);
+
+    document.getElementById('spin-result').textContent = '🌍 ' + paisElegido;
+
+    pendientesGrados.shift();
+    spinning = false;
+    document.getElementById('spinBtn').disabled = false;
+
+    setTimeout(() => {
+      document.getElementById('spin-result').textContent = '';
+      updateGradoActual();
+    }, 1400);
+  }
+  requestAnimationFrame(frame);
+}
+
+async function confirmarPaises() {
+  if (!Object.keys(asignaciones).length) return;
+  const btn = document.getElementById('confirmarPaisBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass"></i> Guardando...';
+  for (const [gradoId, pais] of Object.entries(asignaciones)) {
+    const fd = new FormData();
+    fd.append('csrfmiddlewaretoken', CSRF);
+    fd.append('grado_id', gradoId);
+    fd.append('pais', pais);
+    await fetch(ASIGNAR_URL, {method:'POST', body: fd});
+  }
+  window.location.reload();
+}
+
+function reiniciarSorteo() {
+  pendientesGrados  = gradosOrdenados.filter(g => !g.pais);
+  asignaciones      = {};
+  usadosPrimaria    = [];
+  usadosSecundaria  = [];
+  spinning = false;
+  angle    = 0;
+  document.getElementById('log-paises').innerHTML    = '';
+  document.getElementById('spin-result').textContent = '';
+  document.getElementById('spinBtn').disabled        = false;
+  const btn = document.getElementById('confirmarPaisBtn');
+  btn.disabled = true; btn.style.opacity='.4';
+  btn.innerHTML = '<i class="bi bi-check-all"></i> Guardar Asignaciones de Ruleta';
+  document.querySelectorAll('.grado-row').forEach(r => r.classList.remove('activo'));
+  updateGradoActual();
+}
+
+// ═══ Utilidades ═══
+function mostrarMsg(elId, txt, tipo) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const colors = {ok:'var(--primary-dark)', amber:'var(--warning)', err:'#dc2626'};
+  el.style.color = colors[tipo] || 'var(--text-2)';
+  el.textContent = txt;
+  setTimeout(() => { el.textContent = ''; }, 5000);
+}
+
+// ═══ Init ═══
+renderChips();
+updateGradoActual();
+</script>
+{% endblock %}
