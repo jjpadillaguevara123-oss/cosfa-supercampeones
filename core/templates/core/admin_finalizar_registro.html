@@ -7,6 +7,13 @@
     <div class="page-header fade-up">
       <div class="page-title">Finalizar <span>Registro</span></div>
     </div>
+
+    <!-- Banner de advertencia -->
+    <div class="cosfa-alert alert-err fade-up" style="margin-bottom:1.25rem;font-size:.88rem;border-left:4px solid #e02424;">
+      <i class="bi bi-exclamation-triangle-fill" style="font-size:1.1rem;color:#e02424;flex-shrink:0;"></i>
+      <div><strong>¡Acción irreversible!</strong> Al confirmar, los jugadores sin equipo serán <strong>eliminados permanentemente</strong> del sistema.</div>
+    </div>
+
     <div class="cosfa-card fade-up" style="max-width:560px;">
       <div class="cosfa-card-title"><i class="bi bi-person-check"></i> Registro de Jugadores Finalizado</div>
       <p style="font-size:.88rem;color:var(--muted);line-height:1.75;margin-bottom:1.25rem;">
@@ -18,14 +25,14 @@
       </p>
       {% if jugadores_sin > 0 %}
       <div class="cosfa-alert alert-err" style="margin-bottom:1rem;">
-        <strong>{{ jugadores_sin }}</strong> jugador(es) sin inscripción serán eliminados.
+        <i class="bi bi-person-x-fill"></i> <strong>{{ jugadores_sin }}</strong> jugador(es) sin inscripción serán eliminados.
       </div>
       {% else %}
       <div class="cosfa-alert alert-ok" style="margin-bottom:1rem;">
         ✅ Todos los jugadores están inscritos en al menos un equipo.
       </div>
       {% endif %}
-      <form method="POST">
+      <form method="POST" onsubmit="return confirm('¿Confirmas finalizar el registro?\n\n{% if jugadores_sin > 0 %}Se eliminarán {{ jugadores_sin }} jugador(es) sin equipo asignado.{% else %}No se eliminará ningún jugador.{% endif %}\n\nEsta acción no se puede deshacer.')">
         {% csrf_token %}
         <div style="display:flex;gap:.6rem;">
           <button type="submit" class="btn-cosfa btn-cosfa-primary">

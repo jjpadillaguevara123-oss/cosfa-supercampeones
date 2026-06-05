@@ -8,16 +8,90 @@
       <div class="page-title">{{ titulo }}</div>
       <a href="{% url 'admin_carrusel' %}" class="btn-cosfa btn-cosfa-secondary"><i class="bi bi-arrow-left"></i> Volver</a>
     </div>
-    <div class="cosfa-card fade-up" style="max-width:500px;">
+    <div class="cosfa-card fade-up" style="max-width:600px;">
       <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="mb-3"><label class="form-label">Imagen</label>{{ form.imagen }}</div>
-        <div class="mb-3"><label class="form-label">Título (opcional)</label>{{ form.titulo }}</div>
-        <div class="mb-3"><label class="form-label">Subtítulo (opcional)</label>{{ form.subtitulo }}</div>
+
+        <div class="mb-3">
+          <label class="form-label">Imagen</label>
+          {{ form.imagen }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Título (opcional)</label>
+          {{ form.titulo }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Subtítulo (opcional)</label>
+          {{ form.subtitulo }}
+        </div>
+
+        <!-- Posición focal con preview visual -->
+        <div class="mb-3">
+          <label class="form-label">
+            <i class="bi bi-crop" style="color:var(--primary);"></i>
+            Encuadre de la imagen
+            <span style="font-size:.72rem;color:var(--muted);font-weight:400;"> · ¿Qué parte quieres mostrar?</span>
+          </label>
+
+          <!-- Grid de botones de posición -->
+          <div id="posGrid" style="display:inline-grid;grid-template-columns:repeat(3,52px);gap:4px;margin-bottom:.75rem;">
+            {% for val, label in form.posicion.field.choices %}
+            <button type="button"
+              class="pos-btn {% if form.posicion.value == val or forloop.first and not form.posicion.value %}pos-active{% endif %}"
+              data-val="{{ val }}" title="{{ label }}"
+              style="height:38px;border-radius:6px;border:2px solid var(--border);background:var(--bg);cursor:pointer;font-size:.65rem;color:var(--text-2);transition:all .15s;display:flex;align-items:center;justify-content:center;">
+              {% if val == 'center top' %}<i class="bi bi-arrow-up"></i>
+              {% elif val == 'center bottom' %}<i class="bi bi-arrow-down"></i>
+              {% elif val == 'left center' %}<i class="bi bi-arrow-left"></i>
+              {% elif val == 'right center' %}<i class="bi bi-arrow-right"></i>
+              {% elif val == 'center 25%' %}<i class="bi bi-align-top"></i>
+              {% elif val == 'center 75%' %}<i class="bi bi-align-bottom"></i>
+              {% else %}<i class="bi bi-dot" style="font-size:1.4rem;"></i>{% endif %}
+            </button>
+            {% endfor %}
+          </div>
+
+          <!-- Preview de la imagen con posición aplicada -->
+          {% if form.instance.imagen %}
+          <div style="margin-bottom:.75rem;">
+            <div style="font-size:.72rem;color:var(--muted);margin-bottom:.3rem;">Vista previa del encuadre:</div>
+            <div id="imgPreview" style="width:100%;height:180px;border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--primary-dark);position:relative;">
+              <img id="previewImg" src="{{ form.instance.imagen.url }}"
+                style="width:100%;height:100%;object-fit:cover;object-position:{{ form.posicion.value|default:'center center' }};transition:object-position .3s;">
+              <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(13,71,161,.2) 0%,rgba(0,0,0,.5) 100%);pointer-events:none;"></div>
+              <div style="position:absolute;bottom:.6rem;left:.8rem;color:#fff;font-size:.72rem;text-shadow:0 1px 3px rgba(0,0,0,.8);">
+                {% if form.instance.titulo %}<strong>{{ form.instance.titulo }}</strong>{% endif %}
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <div style="font-size:.72rem;color:var(--muted);font-style:italic;margin-bottom:.75rem;">
+            <i class="bi bi-image"></i> Sube una imagen para ver el preview
+          </div>
+          {% endif %}
+
+          <!-- Campo oculto real -->
+          <select name="posicion" id="id_posicion" style="display:none;">
+            {% for val, label in form.posicion.field.choices %}
+            <option value="{{ val }}" {% if form.posicion.value == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <div style="font-size:.72rem;color:var(--muted);">
+            <i class="bi bi-info-circle"></i> Posición actual: <span id="posLabel" style="font-weight:600;color:var(--primary);">{{ form.posicion.value|default:'Centro (por defecto)' }}</span>
+          </div>
+        </div>
+
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
           <div class="mb-3"><label class="form-label">Orden</label>{{ form.orden }}</div>
-          <div class="mb-3" style="display:flex;align-items:flex-end;padding-bottom:.2rem;"><label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.88rem;">{{ form.activo }} Imagen activa</label></div>
+          <div class="mb-3" style="display:flex;align-items:flex-end;padding-bottom:.2rem;">
+            <label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.88rem;">
+              {{ form.activo }} Imagen activa
+            </label>
+          </div>
         </div>
+
         <div style="display:flex;gap:.5rem;">
           <button type="submit" class="btn-cosfa btn-cosfa-primary"><i class="bi bi-check-lg"></i> Guardar</button>
           <a href="{% url 'admin_carrusel' %}" class="btn-cosfa btn-cosfa-secondary">Cancelar</a>
@@ -26,4 +100,41 @@
     </div>
   </div>
 </div>
+
+<style>
+.pos-btn.pos-active {
+  border-color: var(--primary) !important;
+  background: var(--primary-bg) !important;
+  color: var(--primary) !important;
+}
+.pos-btn:hover { border-color: var(--primary-light) !important; background: var(--primary-bg) !important; }
+</style>
+
+<script>
+const LABELS = {
+  'center center': 'Centro (por defecto)',
+  'center top': 'Arriba',
+  'center bottom': 'Abajo',
+  'left center': 'Izquierda',
+  'right center': 'Derecha',
+  'center 25%': 'Cuarto superior',
+  'center 75%': 'Cuarto inferior',
+};
+
+document.querySelectorAll('.pos-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const val = this.dataset.val;
+    // Actualizar select oculto
+    document.getElementById('id_posicion').value = val;
+    // Actualizar botones activos
+    document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('pos-active'));
+    this.classList.add('pos-active');
+    // Actualizar label
+    document.getElementById('posLabel').textContent = LABELS[val] || val;
+    // Actualizar preview si existe
+    const img = document.getElementById('previewImg');
+    if (img) img.style.objectPosition = val;
+  });
+});
+</script>
 {% endblock %}

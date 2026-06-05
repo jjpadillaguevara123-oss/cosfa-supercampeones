@@ -143,13 +143,14 @@ class ReglaDeporteForm(forms.ModelForm):
 class ImagenCarruselForm(forms.ModelForm):
     class Meta:
         model  = ImagenCarrusel
-        fields = ['imagen','titulo','subtitulo','orden','activo']
+        fields = ['imagen','titulo','subtitulo','orden','activo','posicion']
         widgets = {
             'imagen':    forms.ClearableFileInput(attrs={'class':'form-control'}),
             'titulo':    forms.TextInput(attrs=W),
             'subtitulo': forms.TextInput(attrs=W),
             'orden':     forms.NumberInput(attrs=W),
             'activo':    forms.CheckboxInput(attrs=WC),
+            'posicion':  forms.Select(attrs=WS),
         }
 
 class BusquedaForm(forms.Form):

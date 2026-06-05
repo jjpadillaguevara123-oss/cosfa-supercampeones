@@ -82,12 +82,25 @@ class PaisParticipante(models.Model):
 def get_ciclo(grado): return CICLO_POR_GRADO.get(grado,'I')
 
 
+POSICION_CHOICES = [
+    ('center center', 'Centro (por defecto)'),
+    ('center top',    'Arriba'),
+    ('center bottom', 'Abajo'),
+    ('left center',   'Izquierda'),
+    ('right center',  'Derecha'),
+    ('center 25%',    'Cuarto superior'),
+    ('center 75%',    'Cuarto inferior'),
+]
+
 class ImagenCarrusel(models.Model):
     imagen    = models.ImageField(upload_to='carrusel/')
     titulo    = models.CharField(max_length=200, blank=True)
     subtitulo = models.CharField(max_length=300, blank=True)
     orden     = models.IntegerField(default=0)
     activo    = models.BooleanField(default=True)
+    posicion  = models.CharField(max_length=30, choices=POSICION_CHOICES,
+                                  default='center center',
+                                  help_text='Parte de la imagen que queda visible')
     class Meta: ordering = ['orden']
     def __str__(self): return self.titulo or f"Imagen {self.pk}"
 

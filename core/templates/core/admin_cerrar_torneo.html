@@ -7,9 +7,21 @@
     <div class="page-header fade-up">
       <div class="page-title">Cerrar <span>Torneo</span></div>
     </div>
+
+    <!-- Banner de advertencia general -->
+    <div class="cosfa-alert alert-err fade-up" style="margin-bottom:1.25rem;font-size:.88rem;border-left:4px solid #e02424;">
+      <i class="bi bi-exclamation-triangle-fill" style="font-size:1.1rem;color:#e02424;flex-shrink:0;"></i>
+      <div><strong>¡Atención!</strong> Las acciones de esta página son <strong>irreversibles</strong>. Lee bien cada opción antes de ejecutar.</div>
+    </div>
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;align-items:start;" class="fade-up">
       <div class="cosfa-card">
         <div class="cosfa-card-title">🏆 Guardar Resumen del Torneo</div>
+        <!-- Advertencia específica -->
+        <div style="background:#fef9ec;border:1px solid #fde68a;border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;font-size:.82rem;color:#92400e;">
+          <i class="bi bi-info-circle-fill" style="margin-right:.4rem;"></i>
+          Esta acción guardará el historial del torneo (campeones, podio, goleador). Los datos actuales <strong>no se borrarán</strong>.
+        </div>
         <p style="font-size:.85rem;color:var(--muted);line-height:1.7;margin-bottom:1.25rem;">
           Al cerrar el torneo, el sistema guardará automáticamente:
           <br>• Campeones por cada categoría (deporte/ciclo/género)
@@ -17,7 +29,7 @@
           <br>• Máximo goleador de fútbol
           <br>• El historial quedará visible para todos los usuarios
         </p>
-        <form method="POST">
+        <form method="POST" onsubmit="return confirm('¿Confirmas guardar el resumen del torneo?\n\nEsto registrará el historial con los resultados actuales.')">
           {% csrf_token %}
           <div class="mb-3"><label class="form-label">Nombre del Torneo</label>
             <input type="text" name="nombre" class="form-control" value="Torneo Escolar COSFA" required>
@@ -34,12 +46,17 @@
       </div>
       <div class="cosfa-card" style="border-color:#fecaca;">
         <div class="cosfa-card-title" style="color:#e02424;">⚠️ Resetear para Nuevo Torneo</div>
+        <!-- Advertencia específica fuerte -->
+        <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;font-size:.82rem;color:#991b1b;">
+          <i class="bi bi-exclamation-octagon-fill" style="margin-right:.4rem;color:#e02424;"></i>
+          <strong>¡PELIGRO!</strong> Esta acción <strong>borrará permanentemente</strong> todos los partidos, grupos, goles y asistencias. Solo úsala al inicio de un nuevo año escolar.
+        </div>
         <p style="font-size:.85rem;color:var(--muted);line-height:1.7;margin-bottom:1.25rem;">
           Esta opción <strong style="color:#e02424;">borra todos los partidos, grupos, goles y asistencias</strong> del torneo actual pero <strong>conserva jugadores y grados</strong>. 
           Los jugadores ya no estarán inscritos en ningún equipo.
           <br><br>Úsalo solo al iniciar un nuevo año escolar.
         </p>
-        <form method="POST" onsubmit="return confirm('¿Estás seguro? Esta acción no se puede deshacer. Se eliminarán todos los partidos y estadísticas.')">
+        <form method="POST" onsubmit="return confirmReset()">
           {% csrf_token %}
           <div class="mb-3"><label class="form-label">Nombre del Torneo</label>
             <input type="text" name="nombre" class="form-control" value="Torneo Escolar COSFA" required>
@@ -55,4 +72,12 @@
     </div>
   </div>
 </div>
+<script>
+function confirmReset() {
+  const primera = confirm('⚠️ ADVERTENCIA CRÍTICA ⚠️\n\nEsta acción BORRARÁ PERMANENTEMENTE:\n• Todos los partidos\n• Todos los grupos\n• Todos los goles y asistencias\n\n¿Deseas continuar?');
+  if (!primera) return false;
+  const segunda = confirm('🔴 CONFIRMACIÓN FINAL 🔴\n\nEscribe "CONFIRMAR" o presiona Aceptar para proceder.\n\nEsta acción NO se puede deshacer.');
+  return segunda;
+}
+</script>
 {% endblock %}

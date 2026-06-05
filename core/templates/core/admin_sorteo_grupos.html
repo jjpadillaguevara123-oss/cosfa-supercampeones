@@ -181,9 +181,19 @@ const COLORS=['var(--primary)','#e02424','var(--primary-dark)','var(--warning)',
 function drawWheel(items) {
   ctx.clearRect(0,0,W,H);
   if(!items.length){
-    ctx.fillStyle='var(--bg)'; ctx.beginPath(); ctx.arc(CX,CY,R,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='var(--muted)'; ctx.textAlign='center'; ctx.font='13px Inter';
-    ctx.fillText('Todos asignados',CX,CY); return;
+    const grad = ctx.createRadialGradient(CX,CY,0,CX,CY,R);
+    grad.addColorStop(0,'#1d4ed8'); grad.addColorStop(1,'#0d3276');
+    ctx.beginPath(); ctx.arc(CX,CY,R,0,Math.PI*2); ctx.fillStyle=grad; ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.15)'; ctx.lineWidth=3; ctx.stroke();
+    ctx.beginPath(); ctx.arc(CX,CY,R*0.65,0,Math.PI*2);
+    ctx.strokeStyle='rgba(255,255,255,.1)'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.fillStyle='rgba(255,193,7,.9)'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font='bold 34px Inter'; ctx.fillText('🏆',CX,CY-16);
+    ctx.fillStyle='#fff'; ctx.font='bold 13px Barlow Condensed, Inter';
+    ctx.fillText('¡SORTEO TERMINADO!',CX,CY+16);
+    ctx.fillStyle='rgba(255,255,255,.6)'; ctx.font='10px Inter';
+    ctx.fillText('Todos los equipos asignados',CX,CY+32);
+    return;
   }
   const slice=(2*Math.PI)/items.length;
   for(let i=0;i<items.length;i++){

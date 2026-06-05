@@ -667,6 +667,11 @@ def guardar_paises_config(request):
 def admin_equipo_editar(request, pk):
     eq = get_object_or_404(Equipo,pk=pk)
     form = EquipoForm(request.POST or None, request.FILES or None, instance=eq)
+    # Filtrar capitán: solo jugadores inscritos en ESTE equipo
+    jugadores_equipo = Jugador.objects.filter(
+        inscripciones__equipo=eq
+    ).distinct().order_by('apellido','nombre')
+    form.fields['capitan'].queryset = jugadores_equipo
     if form.is_valid():
         form.save(); messages.success(request,'✅ Equipo actualizado.')
         return redirect('admin_grado_detalle',pk=eq.grado.pk)
